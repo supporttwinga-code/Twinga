@@ -1,2 +1,2 @@
 # Twinga
-Twinga - food delhivery app 
+Twinga - food delivery app
