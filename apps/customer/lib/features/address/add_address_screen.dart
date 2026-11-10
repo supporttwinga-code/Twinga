@@ -1,3 +1,4 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -15,18 +16,19 @@ class AddAddressScreen extends StatefulWidget {
 }
 
 class _AddAddressScreenState extends State<AddAddressScreen> {
-  final TextEditingController _house = TextEditingController();
-  final TextEditingController _area = TextEditingController();
-  final TextEditingController _landmark = TextEditingController();
-  final TextEditingController _pincode = TextEditingController();
-  final TextEditingController _city = TextEditingController();
-  final TextEditingController _district = TextEditingController();
-  final TextEditingController _state = TextEditingController();
+  final _house = TextEditingController();
+  final _area = TextEditingController();
+  final _landmark = TextEditingController();
+  final _pincode = TextEditingController();
+  final _city = TextEditingController();
+  final _district = TextEditingController();
+  final _state = TextEditingController();
 
   String _label = 'Home';
   double? _lat;
   double? _lng;
   double? _accuracy;
+
   bool _locating = false;
   bool _saving = false;
   String? _error;
@@ -44,53 +46,66 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     super.dispose();
   }
 
+  String _clean(String? value) {
+    return (value ?? '').trim();
+  }
+
   Future<void> _useCurrentLocation() async {
+    if (_locating || _saving) return;
+
     setState(() {
       _locating = true;
       _error = null;
       _note = null;
     });
+
     try {
-      final bool enabled = await Geolocator.isLocationServiceEnabled();
+      final bool enabled =
+          await Geolocator.isLocationServiceEnabled();
+
       if (!enabled) {
-        throw 'Please turn on location (GPS) on your phone.';
+        throw Exception('Please turn on GPS on your phone.');
       }
-      LocationPermission perm = await Geolocator.checkPermission();
-      if (perm == LocationPermission.denied) {
-        perm = await Geolocator.requestPermission();
+
+      LocationPermission permission =
+          await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
       }
-      if (perm == LocationPermission.denied ||
-          perm == LocationPermission.deniedForever) {
-        throw 'Location permission is needed. Open phone Settings > Apps > Twinga > Permissions > Location and allow it.';
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        throw Exception(
+          'Please allow location permission in phone settings.',
+        );
       }
-      final Position pos = await Geolocator.getCurrentPosition(
+
+      final Position position =
+          await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
           timeLimit: Duration(seconds: 25),
         ),
       );
-      if (!mounted) {
-        return;
-      }
+
+      if (!mounted) return;
+
       setState(() {
-        _lat = pos.latitude;
-        _lng = pos.longitude;
-        _accuracy = pos.accuracy;
+        _lat = position.latitude;
+        _lng = position.longitude;
+        _accuracy = position.accuracy;
       });
-      await _fillFromPlacemark(pos.latitude, pos.longitude);
+
+      await _fillFromPlacemark(
+        position.latitude,
+        position.longitude,
+      );
     } catch (e) {
-      if (!mounted) {
-        return;
-      }
-      final String text = e.toString();
+      if (!mounted) return;
+
       setState(() {
-        if (e is String) {
-          _error = e;
-        } else if (text.contains('TimeoutException')) {
-          _error = 'GPS signal not found in time. Go near a window or outside and try again.';
-        } else {
-          _error = 'Could not get your location: $text';
-        }
+        _error = e.toString().replaceFirst('Exception: ', '');
       });
     } finally {
       if (mounted) {
@@ -101,45 +116,63 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     }
   }
 
-  Future<void> _fillFromPlacemark(double lat, double lng) async {
+  Future<void> _fillFromPlacemark(
+    double lat,
+    double lng,
+  ) async {
     try {
-      final List<Placemark> list = await placemarkFromCoordinates(lat, lng);
-      if (!mounted || list.isEmpty) {
-        return;
-      }
-      final Placemark p = list.first;
-      String pick(String? v) => (v ?? '').trim();
-      final String area =
-          pick(p.subLocality).isNotEmpty ? pick(p.subLocality) : pick(p.street);
+      final List<Placemark> places =
+          await placemarkFromCoordinates(lat, lng);
+
+      if (!mounted || places.isEmpty) return;
+
+      final Placemark place = places.first;
+
+      final String area = _clean(place.subLocality).isNotEmpty
+          ? _clean(place.subLocality)
+          : _clean(place.street);
+
+      final String city = _clean(place.locality);
+
+      final String stateName =
+          _clean(place.administrativeArea);
+
+      final String pin = _clean(place.postalCode);
+
       setState(() {
-        if (area.isNotEmpty) {
-          _area.text = area;
+        if (area.isNotEmpty) _area.text = area;
+
+        if (city.isNotEmpty) _city.text = city;
+
+        // Do not mistake a division or sub-administrative
+        // region for a district.
+        // Customer confirms the actual district manually.
+        _district.clear();
+
+        if (stateName.isNotEmpty) {
+          _state.text = stateName;
         }
-        if (pick(p.locality).isNotEmpty) {
-          _city.text = pick(p.locality);
+
+        if (RegExp(r'^\d{6}$').hasMatch(pin)) {
+          _pincode.text = pin;
         }
-        if (pick(p.subAdministrativeArea).isNotEmpty) {
-          _district.text = pick(p.subAdministrativeArea);
-        }
-        if (pick(p.administrativeArea).isNotEmpty) {
-          _state.text = pick(p.administrativeArea);
-        }
-        if (pick(p.postalCode).isNotEmpty) {
-          _pincode.text = pick(p.postalCode);
-        }
-        _note = 'Address filled from your location. Please check it and correct anything wrong.';
+
+        _note =
+            'Location detected. Please verify your address and enter your district.';
       });
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
+    } catch (_) {
+      if (!mounted) return;
+
       setState(() {
-        _note = 'Location captured, but the address could not be filled automatically. Please type it.';
+        _note =
+            'GPS captured. Please enter your address details manually.';
       });
     }
   }
 
   Future<void> _save() async {
+    if (_saving || _locating) return;
+
     final String house = _house.text.trim();
     final String area = _area.text.trim();
     final String landmark = _landmark.text.trim();
@@ -150,49 +183,63 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
     if (house.isEmpty) {
       setState(() {
-        _error = 'Please enter your flat / house number and building name.';
+        _error = 'Please enter your house or building number.';
       });
       return;
     }
+
     if (area.isEmpty) {
       setState(() {
-        _error = 'Please enter your street / area.';
+        _error = 'Please enter your street or area.';
       });
       return;
     }
+
     if (!RegExp(r'^\d{6}$').hasMatch(pin)) {
       setState(() {
         _error = 'Please enter a valid 6 digit pincode.';
       });
       return;
     }
+
     if (city.isEmpty || district.isEmpty || stateName.isEmpty) {
       setState(() {
-        _error = 'Please enter your city, district and state.';
+        _error = 'Please enter city, district and state correctly.';
       });
       return;
     }
+
     if (_lat == null || _lng == null) {
       setState(() {
-        _error = 'Please tap "Use my current location" while you are at this address.';
+        _error = 'Please capture your current location first.';
       });
       return;
     }
+
     final User? user = FirebaseAuth.instance.currentUser;
+
     if (user == null) {
+      setState(() {
+        _error = 'Please sign in again before saving your address.';
+      });
       return;
     }
+
     setState(() {
       _saving = true;
       _error = null;
     });
+
     final String addressLine =
         '$house, $area, $city, $district, $stateName - $pin';
+
     try {
-      final DocumentReference<Map<String, dynamic>> userRef =
-          FirebaseFirestore.instance.collection('users').doc(user.uid);
-      final DocumentReference<Map<String, dynamic>> ref =
-          await userRef.collection('addresses').add(<String, dynamic>{
+      final userRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid);
+
+      final addressRef =
+          await userRef.collection('addresses').add({
         'label': _label,
         'house': house,
         'area': area,
@@ -204,29 +251,35 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         'addressLine': addressLine,
         'lat': _lat!,
         'lng': _lng!,
+        'accuracy': _accuracy,
         'createdAt': FieldValue.serverTimestamp(),
       });
-      await userRef.update(<String, dynamic>{'defaultAddressId': ref.id});
-      if (!mounted) {
-        return;
-      }
+
+      await userRef.set({
+        'defaultAddressId': addressRef.id,
+      }, SetOptions(merge: true));
+
+      if (!mounted) return;
+
       Navigator.of(context).pop();
     } on FirebaseException catch (e) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
+
       setState(() {
-        _error = 'Could not save address (${e.code}). Please try again.';
-        _saving = false;
+        _error = 'Address save failed (${e.code}). Please try again.';
       });
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
+    } catch (_) {
+      if (!mounted) return;
+
       setState(() {
         _error = 'Could not save address. Please try again.';
-        _saving = false;
       });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+        });
+      }
     }
   }
 
@@ -257,28 +310,38 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add address')),
+      appBar: AppBar(
+        title: const Text('Add address'),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           OutlinedButton.icon(
-            onPressed: _locating || _saving ? null : _useCurrentLocation,
+            onPressed:
+                _locating || _saving ? null : _useCurrentLocation,
             icon: _locating
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
                   )
                 : const Icon(Icons.my_location),
             label: Text(
-              _lat == null ? 'Use my current location' : 'Update my location',
+              _lat == null
+                  ? 'Use my current location'
+                  : 'Update my location',
             ),
           ),
+
           if (_lat != null && _lng != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                'Location captured: ${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}'
+                'Location captured: '
+                '${_lat!.toStringAsFixed(5)}, '
+                '${_lng!.toStringAsFixed(5)}'
                 '${_accuracy == null ? '' : ' (±${_accuracy!.round()} m)'}',
                 style: const TextStyle(
                   color: TwingaColors.veg,
@@ -286,20 +349,26 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                 ),
               ),
             ),
+
           if (_note != null)
             Padding(
-              padding: const EdgeInsets.only(top: 6),
+              padding: const EdgeInsets.only(top: 8),
               child: Text(_note!),
             ),
+
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 _error!,
-                style: const TextStyle(color: TwingaColors.error),
+                style: const TextStyle(
+                  color: TwingaColors.error,
+                ),
               ),
             ),
+
           const SizedBox(height: 20),
+
           const Text(
             'Save address as',
             style: TextStyle(
@@ -307,23 +376,29 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
               color: TwingaColors.ink,
             ),
           ),
+
           const SizedBox(height: 8),
+
           Wrap(
             spacing: 8,
             children: [
-              for (final String l in <String>['Home', 'Work', 'Other'])
+              for (final String label in ['Home', 'Work', 'Other'])
                 ChoiceChip(
-                  label: Text(l),
-                  selected: _label == l,
-                  onSelected: (_) {
-                    setState(() {
-                      _label = l;
-                    });
-                  },
+                  label: Text(label),
+                  selected: _label == label,
+                  onSelected: _saving
+                      ? null
+                      : (_) {
+                          setState(() {
+                            _label = label;
+                          });
+                        },
                 ),
             ],
           ),
+
           const SizedBox(height: 16),
+
           _field(_house, 'Flat / House no. and building name'),
           _field(_area, 'Street / Area / Locality'),
           _field(_landmark, 'Landmark (optional)'),
@@ -332,14 +407,19 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
             'Pincode',
             type: TextInputType.number,
             maxLength: 6,
-            formatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+            formatters: [
+              FilteringTextInputFormatter.digitsOnly,
+            ],
           ),
           _field(_city, 'City'),
           _field(_district, 'District'),
           _field(_state, 'State'),
+
           const SizedBox(height: 12),
+
           FilledButton(
-            onPressed: _saving || _locating ? null : _save,
+            onPressed:
+                _saving || _locating ? null : _save,
             child: _saving
                 ? const SizedBox(
                     width: 20,
