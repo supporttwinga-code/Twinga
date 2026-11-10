@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../address/address_bar.dart';
 import '../restaurants/restaurant_list.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -11,7 +12,6 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final User? user = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Twinga'),
@@ -28,6 +28,7 @@ class HomeScreen extends StatelessWidget {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                AddressBar(uid: user.uid),
                 _Greeting(uid: user.uid),
                 const Expanded(child: RestaurantList()),
               ],
@@ -44,15 +45,11 @@ class _Greeting extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .snapshots(),
+      stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
       builder: (context, snapshot) {
         final Map<String, dynamic>? data = snapshot.data?.data();
         final String name = (data?['name'] ?? '').toString();
         final String role = (data?['role'] ?? '').toString();
-
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
           child: Column(
