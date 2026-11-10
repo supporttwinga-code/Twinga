@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
-void main() => runApp(const TwingaApp());
+import 'core/theme.dart';
+import 'features/splash/splash_screen.dart';
+
+void main() {
+  runApp(const TwingaApp());
+}
 
 class TwingaApp extends StatelessWidget {
   const TwingaApp({super.key});
@@ -10,18 +15,8 @@ class TwingaApp extends StatelessWidget {
     return MaterialApp(
       title: 'Twinga',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
-        useMaterial3: true,
-      ),
-      home: const Scaffold(
-        body: Center(
-          child: Text(
-            'Hello Twinga',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
+      theme: TwingaTheme.light(),
+      home: const SplashScreen(),
     );
   }
 }
