@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  geocoding: ^4.0.0
+  geocoding: 4.0.0
 
 flutter:
   uses-material-design: true
