@@ -58,8 +58,8 @@ class OrderStatusScreen extends StatelessWidget {
           final dynamic rawItems = d['items'];
           final List<dynamic> items = rawItems is List ? rawItems : <dynamic>[];
           final String riderName = (d['riderName'] ?? '').toString();
-          final bool showOtp = status == 'placed' ||
-              status == 'accepted' ||
+          final bool paid = (d['paymentStatus'] ?? '').toString() == 'paid';
+          final bool showOtp = status == 'accepted' ||
               status == 'preparing' ||
               status == 'ready' ||
               status == 'picked';
@@ -84,6 +84,10 @@ class OrderStatusScreen extends StatelessWidget {
                 Text('Delivery partner: $riderName'),
               ],
               const SizedBox(height: 16),
+              if (status == 'placed')
+                const Text(
+                  'Your delivery OTP will appear here once the restaurant accepts your order.',
+                ),
               if (showOtp) _OtpCard(ref: ref),
               const SizedBox(height: 16),
               for (final dynamic it in items)
@@ -110,9 +114,9 @@ class OrderStatusScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Total (cash on delivery)',
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                  Text(
+                    paid ? 'Paid (cash on delivery)' : 'To pay (cash on delivery)',
+                    style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                   Text(
                     rupees(totalPaise),
