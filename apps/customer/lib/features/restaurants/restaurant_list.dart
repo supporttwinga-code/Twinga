@@ -2,11 +2,67 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../address/address_model.dart';
+import '../cart/pricing.dart';
 import 'menu_screen.dart';
 import 'restaurant_models.dart';
 
+Widget _centerText(String text) {
+  return Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Text(text, textAlign: TextAlign.center),
+    ),
+  );
+}
+
+/// Shows restaurants that deliver to the customer's selected address.
+class NearbyRestaurants extends StatelessWidget {
+  const NearbyRestaurants({super.key, required this.uid});
+
+  final String uid;
+
+  @override
+  Widget build(BuildContext context) {
+    final DocumentReference<Map<String, dynamic>> userRef =
+        FirebaseFirestore.instance.collection('users').doc(uid);
+    const String noAddress =
+        'Add your delivery address above to see restaurants that deliver to you.';
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: userRef.snapshots(),
+      builder: (context, userSnap) {
+        final dynamic raw = userSnap.data?.data()?['defaultAddressId'];
+        if (raw is! String || raw.isEmpty) {
+          return _centerText(noAddress);
+        }
+        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: userRef.collection('addresses').doc(raw).snapshots(),
+          builder: (context, addrSnap) {
+            final DocumentSnapshot<Map<String, dynamic>>? doc = addrSnap.data;
+            if (doc == null || !doc.exists) {
+              return _centerText(noAddress);
+            }
+            final SavedAddress a = SavedAddress.fromDoc(doc);
+            return RestaurantList(lat: a.lat, lng: a.lng);
+          },
+        );
+      },
+    );
+  }
+}
+
+class _Nearby {
+  const _Nearby(this.restaurant, this.meters);
+
+  final Restaurant restaurant;
+  final int meters;
+}
+
 class RestaurantList extends StatelessWidget {
-  const RestaurantList({super.key});
+  const RestaurantList({super.key, required this.lat, required this.lng});
+
+  final double lat;
+  final double lng;
 
   @override
   Widget build(BuildContext context) {
@@ -17,44 +73,37 @@ class RestaurantList extends StatelessWidget {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                'Could not load restaurants:\n${snapshot.error}',
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
+          return _centerText('Could not load restaurants:\n${snapshot.error}');
         }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
-        final List<Restaurant> list = snapshot.data!.docs
-            .map((d) => Restaurant.fromDoc(d))
-            .toList();
-        list.sort((a, b) {
-          if (a.isOpen != b.isOpen) {
-            return a.isOpen ? -1 : 1;
+        final List<_Nearby> list = <_Nearby>[];
+        for (final QueryDocumentSnapshot<Map<String, dynamic>> d
+            in snapshot.data!.docs) {
+          final Restaurant r = Restaurant.fromDoc(d);
+          if (!r.hasLocation) {
+            continue;
           }
-          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+          final int m = distanceMeters(lat, lng, r.lat, r.lng);
+          if (m <= r.radiusKm * 1000) {
+            list.add(_Nearby(r, m));
+          }
+        }
+        list.sort((a, b) {
+          if (a.restaurant.isOpen != b.restaurant.isOpen) {
+            return a.restaurant.isOpen ? -1 : 1;
+          }
+          return a.meters.compareTo(b.meters);
         });
         if (list.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Text(
-                'No restaurants available right now.',
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
+          return _centerText('No restaurants available right now.');
         }
         return ListView.builder(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           itemCount: list.length,
           itemBuilder: (context, index) {
-            return _RestaurantCard(restaurant: list[index]);
+            return _RestaurantCard(item: list[index]);
           },
         );
       },
@@ -63,13 +112,13 @@ class RestaurantList extends StatelessWidget {
 }
 
 class _RestaurantCard extends StatelessWidget {
-  const _RestaurantCard({required this.restaurant});
+  const _RestaurantCard({required this.item});
 
-  final Restaurant restaurant;
+  final _Nearby item;
 
   @override
   Widget build(BuildContext context) {
-    final Restaurant r = restaurant;
+    final Restaurant r = item.restaurant;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       color: Colors.white,
@@ -137,12 +186,14 @@ class _RestaurantCard extends StatelessWidget {
                           r.rating > 0 ? r.rating.toStringAsFixed(1) : 'New',
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
                         const Icon(Icons.schedule, size: 16),
                         const SizedBox(width: 2),
                         Text('${r.prepTimeMin} min'),
+                        const SizedBox(width: 10),
+                        Text('${(item.meters / 1000).toStringAsFixed(1)} km'),
                         if (!r.isOpen) ...[
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           const Text(
                             'Closed',
                             style: TextStyle(
