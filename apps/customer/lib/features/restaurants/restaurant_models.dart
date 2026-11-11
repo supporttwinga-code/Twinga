@@ -31,6 +31,7 @@ bool _asBool(dynamic v, bool fallback) {
 class Restaurant {
   const Restaurant({
     required this.id,
+    required this.ownerUid,
     required this.name,
     required this.cuisines,
     required this.isOpen,
@@ -38,9 +39,13 @@ class Restaurant {
     required this.prepTimeMin,
     required this.packagingChargePaise,
     required this.imageUrl,
+    required this.lat,
+    required this.lng,
+    required this.radiusKm,
   });
 
   final String id;
+  final String ownerUid;
   final String name;
   final String cuisines;
   final bool isOpen;
@@ -48,11 +53,17 @@ class Restaurant {
   final int prepTimeMin;
   final int packagingChargePaise;
   final String imageUrl;
+  final double lat;
+  final double lng;
+  final double radiusKm;
+
+  bool get hasLocation => lat != 0 || lng != 0;
 
   factory Restaurant.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final Map<String, dynamic> d = doc.data() ?? <String, dynamic>{};
     return Restaurant(
       id: doc.id,
+      ownerUid: _asString(d['ownerUid'], ''),
       name: _asString(d['name'], 'Restaurant'),
       cuisines: _asString(d['cuisines'], ''),
       isOpen: _asBool(d['isOpen'], false),
@@ -60,6 +71,9 @@ class Restaurant {
       prepTimeMin: _asInt(d['prepTimeMin'], 20),
       packagingChargePaise: _asInt(d['packagingChargePaise'], 0),
       imageUrl: _asString(d['imageUrl'], ''),
+      lat: _asDouble(d['lat'], 0),
+      lng: _asDouble(d['lng'], 0),
+      radiusKm: _asDouble(d['deliveryRadiusKm'], 0),
     );
   }
 }
