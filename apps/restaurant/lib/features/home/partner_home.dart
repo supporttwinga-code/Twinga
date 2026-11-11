@@ -3,12 +3,31 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../registration/register_restaurant_screen.dart';
 
 Widget _message(String text) {
   return Center(
     child: Padding(
       padding: const EdgeInsets.all(24),
       child: Text(text, textAlign: TextAlign.center),
+    ),
+  );
+}
+
+int _intOf(dynamic v) {
+  if (v is num) {
+    return v.round();
+  }
+  return 0;
+}
+
+Widget _hello(String ownerName) {
+  return Text(
+    ownerName.isEmpty ? 'Hello!' : 'Hello, $ownerName',
+    style: const TextStyle(
+      fontSize: 24,
+      fontWeight: FontWeight.w800,
+      color: TwingaColors.ink,
     ),
   );
 }
@@ -84,52 +103,109 @@ class _RestaurantStatus extends StatelessWidget {
         if (!snap.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
+        if (snap.data!.docs.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _hello(ownerName),
+                const SizedBox(height: 20),
+                const Text(
+                  'Your restaurant is not registered yet',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: TwingaColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Register your restaurant to start receiving orders on Twinga.',
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (context) => const RegisterRestaurantScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.storefront),
+                  label: const Text('Register your restaurant'),
+                ),
+              ],
+            ),
+          );
+        }
+        final Map<String, dynamic> d = snap.data!.docs.first.data();
+        final String rname = (d['name'] ?? 'Your restaurant').toString();
+        final String status = (d['status'] ?? '').toString();
         String title;
         String body;
-        if (snap.data!.docs.isEmpty) {
-          title = 'Your restaurant is not registered yet';
-          body = 'Restaurant registration will be available in the next update.';
+        if (status == 'approved') {
+          title = '$rname is approved';
+          body = 'Your restaurant is approved. Menu management is coming in the next update.';
+        } else if (status == 'rejected') {
+          title = '$rname was not approved';
+          body = 'Please contact Twinga support.';
         } else {
-          final Map<String, dynamic> d = snap.data!.docs.first.data();
-          final String rname = (d['name'] ?? 'Your restaurant').toString();
-          final String status = (d['status'] ?? '').toString();
-          if (status == 'approved') {
-            title = '$rname is approved';
-            body = 'Your restaurant is live for customers.';
-          } else if (status == 'rejected') {
-            title = '$rname was not approved';
-            body = 'Please contact Twinga support.';
-          } else {
-            title = '$rname is under review';
-            body = 'We will approve it after checking your details.';
-          }
+          title = '$rname is under review';
+          body = 'We will approve it after checking your details.';
         }
-        return Padding(
+        final String address = (d['addressLine'] ?? '').toString();
+        final int radius = _intOf(d['deliveryRadiusKm']);
+        final int packagingRupees = _intOf(d['packagingChargePaise']) ~/ 100;
+        final int prep = _intOf(d['prepTimeMin']);
+        return ListView(
           padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                ownerName.isEmpty ? 'Hello!' : 'Hello, $ownerName',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: TwingaColors.ink,
+          children: [
+            _hello(ownerName),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: TwingaColors.ink,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(body),
+            const SizedBox(height: 20),
+            Card(
+              color: Colors.white,
+              elevation: 1,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      rname,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: TwingaColors.ink,
+                      ),
+                    ),
+                    if (address.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(address),
+                    ],
+                    const SizedBox(height: 10),
+                    Text('Delivery radius: $radius km'),
+                    Text('Packaging charge: ₹$packagingRupees per order'),
+                    Text('Preparation time: $prep min'),
+                  ],
                 ),
               ),
-              const SizedBox(height: 20),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: TwingaColors.ink,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(body),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
