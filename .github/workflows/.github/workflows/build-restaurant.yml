@@ -1,0 +1,63 @@
+name: Build Restaurant APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/restaurant/**'
+      - '.github/workflows/build-restaurant.yml'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/restaurant
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter create --platforms=android --org com.twinga --project-name restaurant .
+      - run: sed -i 's/android:label="[^"]*"/android:label="Twinga Partner"/' android/app/src/main/AndroidManifest.xml
+      - run: sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <application#' android/app/src/main/AndroidManifest.xml
+      - run: sed -i 's#<application#<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>\n    <application#' android/app/src/main/AndroidManifest.xml
+      - run: flutter pub add firebase_core firebase_auth cloud_firestore geolocator
+      - name: Generate firebase_options.dart
+        run: |
+          python3 - <<'PY'
+          import json
+          d = json.load(open('google-services.json'))
+          pkg = 'com.twinga.restaurant'
+          client = None
+          for c in d['client']:
+              if c['client_info']['android_client_info']['package_name'] == pkg:
+                  client = c
+                  break
+          if client is None:
+              raise SystemExit('google-services.json has no client for ' + pkg)
+          opts = {
+              'apiKey': client['api_key'][0]['current_key'],
+              'appId': client['client_info']['mobilesdk_app_id'],
+              'messagingSenderId': d['project_info']['project_number'],
+              'projectId': d['project_info']['project_id'],
+          }
+          bucket = d['project_info'].get('storage_bucket')
+          if bucket:
+              opts['storageBucket'] = bucket
+          body = ''.join("    %s: '%s',\n" % (k, v) for k, v in opts.items())
+          src = ("import 'package:firebase_core/firebase_core.dart';\n\n"
+                 "class DefaultFirebaseOptions {\n"
+                 "  static const FirebaseOptions android = FirebaseOptions(\n"
+                 + body + "  );\n}\n")
+          open('lib/firebase_options.dart', 'w').write(src)
+          print('firebase_options.dart written for project', opts['projectId'])
+          PY
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: twinga-restaurant-apk
+          path: apps/restaurant/build/app/outputs/flutter-apk/app-release.apk
