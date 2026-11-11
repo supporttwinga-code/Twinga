@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
 import '../address/address_bar.dart';
+import '../orders/orders_screen.dart';
 import '../restaurants/restaurant_list.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -16,6 +17,17 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Twinga'),
         actions: [
+          IconButton(
+            tooltip: 'My orders',
+            icon: const Icon(Icons.receipt_long),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const OrdersScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Log out',
             icon: const Icon(Icons.logout),
@@ -30,7 +42,7 @@ class HomeScreen extends StatelessWidget {
               children: [
                 AddressBar(uid: user.uid),
                 _Greeting(uid: user.uid),
-                const Expanded(child: RestaurantList()),
+                Expanded(child: NearbyRestaurants(uid: user.uid)),
               ],
             ),
     );
