@@ -1,3 +1,4 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final User? user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Twinga'),
@@ -42,7 +44,9 @@ class HomeScreen extends StatelessWidget {
               children: [
                 AddressBar(uid: user.uid),
                 _Greeting(uid: user.uid),
-                Expanded(child: NearbyRestaurants(uid: user.uid)),
+                Expanded(
+                  child: NearbyRestaurants(uid: user.uid),
+                ),
               ],
             ),
     );
@@ -57,11 +61,15 @@ class _Greeting extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .snapshots(),
       builder: (context, snapshot) {
         final Map<String, dynamic>? data = snapshot.data?.data();
         final String name = (data?['name'] ?? '').toString();
         final String role = (data?['role'] ?? '').toString();
+
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
           child: Column(
@@ -81,7 +89,8 @@ class _Greeting extends StatelessWidget {
                 const Padding(
                   padding: EdgeInsets.only(top: 8),
                   child: Text(
-                    'You are signed in as admin. The admin panel will be a separate web panel.',
+                    'You are signed in as admin. '
+                    'The admin panel will be a separate web panel.',
                     style: TextStyle(color: TwingaColors.error),
                   ),
                 ),
