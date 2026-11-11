@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/money.dart';
 import '../../core/theme.dart';
+import '../cart/cart.dart';
+import '../cart/checkout_screen.dart';
 import 'restaurant_models.dart';
 
 class MenuScreen extends StatelessWidget {
@@ -10,10 +12,65 @@ class MenuScreen extends StatelessWidget {
 
   final Restaurant restaurant;
 
+  Future<void> _add(BuildContext context, MenuItem item) async {
+    if (cart.belongsToOther(restaurant)) {
+      final String other = cart.restaurant?.name ?? 'another restaurant';
+      final bool? yes = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Start a new cart?'),
+          content: Text(
+            'Your cart has items from $other. Adding this item will remove them.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Start new cart'),
+            ),
+          ],
+        ),
+      );
+      if (yes != true) {
+        return;
+      }
+    }
+    cart.add(restaurant, item);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(restaurant.name)),
+      bottomNavigationBar: AnimatedBuilder(
+        animation: cart,
+        builder: (context, child) {
+          final Restaurant? current = cart.restaurant;
+          if (cart.isEmpty || current == null || current.id != restaurant.id) {
+            return const SizedBox.shrink();
+          }
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: FilledButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const CheckoutScreen(),
+                    ),
+                  );
+                },
+                child: Text(
+                  'View cart  ·  ${cart.itemCount} item${cart.itemCount == 1 ? '' : 's'}  ·  ${rupees(cart.foodPaise)}',
+                ),
+              ),
+            ),
+          );
+        },
+      ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
             .collection('restaurants')
@@ -47,6 +104,20 @@ class MenuScreen extends StatelessWidget {
           }
           final List<String> categories = byCategory.keys.toList()..sort();
           final List<Widget> children = <Widget>[];
+          if (!restaurant.isOpen) {
+            children.add(
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Text(
+                  'This restaurant is closed right now.',
+                  style: TextStyle(
+                    color: TwingaColors.error,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            );
+          }
           if (restaurant.packagingChargePaise > 0) {
             children.add(
               Padding(
@@ -72,7 +143,13 @@ class MenuScreen extends StatelessWidget {
               ),
             );
             for (final MenuItem item in byCategory[category]!) {
-              children.add(_MenuTile(item: item));
+              children.add(
+                _MenuTile(
+                  item: item,
+                  enabled: restaurant.isOpen && item.isAvailable,
+                  onAdd: () => _add(context, item),
+                ),
+              );
             }
           }
           children.add(const SizedBox(height: 24));
@@ -84,9 +161,15 @@ class MenuScreen extends StatelessWidget {
 }
 
 class _MenuTile extends StatelessWidget {
-  const _MenuTile({required this.item});
+  const _MenuTile({
+    required this.item,
+    required this.enabled,
+    required this.onAdd,
+  });
 
   final MenuItem item;
+  final bool enabled;
+  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +216,41 @@ class _MenuTile extends StatelessWidget {
               ],
             ),
           ),
+          if (enabled)
+            AnimatedBuilder(
+              animation: cart,
+              builder: (context, child) {
+                final int q = cart.qtyOf(item.id);
+                if (q == 0) {
+                  return OutlinedButton(
+                    onPressed: onAdd,
+                    child: const Text('ADD'),
+                  );
+                }
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: () => cart.decrease(item.id),
+                    ),
+                    Text(
+                      '$q',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: onAdd,
+                    ),
+                  ],
+                );
+              },
+            ),
         ],
       ),
     );
