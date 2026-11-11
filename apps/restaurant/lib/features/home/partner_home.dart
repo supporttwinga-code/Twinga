@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../menu/menu_manager_screen.dart';
 import '../registration/register_restaurant_screen.dart';
 
 Widget _message(String text) {
@@ -146,7 +147,7 @@ class _RestaurantStatus extends StatelessWidget {
         String body;
         if (status == 'approved') {
           title = '$rname is approved';
-          body = 'Your restaurant is approved. Menu management is coming in the next update.';
+          body = 'Your restaurant is approved. Add your menu and switch to Open when you are ready for orders.';
         } else if (status == 'rejected') {
           title = '$rname was not approved';
           body = 'Please contact Twinga support.';
@@ -158,6 +159,8 @@ class _RestaurantStatus extends StatelessWidget {
         final int radius = _intOf(d['deliveryRadiusKm']);
         final int packagingRupees = _intOf(d['packagingChargePaise']) ~/ 100;
         final int prep = _intOf(d['prepTimeMin']);
+        final String restaurantId = snap.data!.docs.first.id;
+        final bool isOpen = d['isOpen'] is bool ? d['isOpen'] as bool : false;
         return ListView(
           padding: const EdgeInsets.all(24),
           children: [
@@ -204,6 +207,45 @@ class _RestaurantStatus extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
+            if (status == 'approved') ...[
+              const SizedBox(height: 16),
+              Card(
+                color: Colors.white,
+                elevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: SwitchListTile(
+                  title: Text(
+                    isOpen ? 'Restaurant is Open' : 'Restaurant is Closed',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  subtitle: const Text('Customers can order only when you are open.'),
+                  value: isOpen,
+                  onChanged: (bool v) {
+                    FirebaseFirestore.instance
+                        .collection('restaurants')
+                        .doc(restaurantId)
+                        .update(<String, dynamic>{'isOpen': v});
+                  },
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (context) => MenuManagerScreen(
+                      restaurantId: restaurantId,
+                      restaurantName: rname,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.restaurant_menu),
+              label: const Text('Manage menu'),
             ),
           ],
         );
