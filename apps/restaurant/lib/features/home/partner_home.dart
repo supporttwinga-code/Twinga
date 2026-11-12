@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
 import '../menu/menu_manager_screen.dart';
+import '../orders/restaurant_orders_screen.dart';
 import '../registration/register_restaurant_screen.dart';
 
 Widget _message(String text) {
@@ -233,6 +234,10 @@ class _RestaurantStatus extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 16),
+            if (status == 'approved') ...[
+              OrdersButton(uid: uid),
+              const SizedBox(height: 12),
+            ],
             FilledButton.icon(
               onPressed: () {
                 Navigator.of(context).push(
