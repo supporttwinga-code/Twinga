@@ -21,6 +21,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: '3.47.9'
       - run: flutter create --platforms=android --org com.twinga --project-name restaurant .
       - run: sed -i 's/android:label="[^"]*"/android:label="Twinga Partner"/' android/app/src/main/AndroidManifest.xml
       - run: sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <application#' android/app/src/main/AndroidManifest.xml
