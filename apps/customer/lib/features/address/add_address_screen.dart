@@ -6,7 +6,6 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../core/theme.dart';
-import '../cart/pricing.dart';
 
 class AddAddressScreen extends StatefulWidget {
   const AddAddressScreen({super.key});
@@ -32,6 +31,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   bool _saving = false;
   String? _error;
   String? _note;
+  String _gpsSig = '';
 
   @override
   void dispose() {
@@ -128,6 +128,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         if (pick(p.postalCode).isNotEmpty) {
           _pincode.text = pick(p.postalCode);
         }
+        _gpsSig = '${_area.text.trim()}|${_city.text.trim()}|${_pincode.text.trim()}';
         _note = 'Address filled from your location. Please check it and correct anything wrong.';
       });
     } catch (e) {
@@ -183,25 +184,26 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     });
     final String addressLine =
         '$house, $area, $city, $district, $stateName - $pin';
-    // The delivery point must match the address that was TYPED, not just the
-    // place where the phone happens to be. Look the typed address up on the
-    // map; keep the GPS point only if it agrees with it (within 3 km).
-    double? lat = _lat;
-    double? lng = _lng;
-    try {
-      final List<Location> found = await locationFromAddress(
-        '$area, $city, $district, $stateName, $pin, India',
-      );
-      if (found.isNotEmpty) {
-        final Location g = found.first;
-        if (lat == null ||
-            lng == null ||
-            distanceMeters(lat, lng, g.latitude, g.longitude) > 3000) {
-          lat = g.latitude;
-          lng = g.longitude;
+    // GPS is used only if the address was filled from GPS and not edited.
+    // Otherwise the TYPED address is looked up on the map.
+    double? lat;
+    double? lng;
+    final bool gpsMatches =
+        _lat != null && _lng != null && _gpsSig == '$area|$city|$pin';
+    if (gpsMatches) {
+      lat = _lat;
+      lng = _lng;
+    } else {
+      try {
+        final List<Location> found = await locationFromAddress(
+          '$area, $city, $district, $stateName, $pin, India',
+        );
+        if (found.isNotEmpty) {
+          lat = found.first.latitude;
+          lng = found.first.longitude;
         }
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
     if (lat == null || lng == null) {
       if (!mounted) {
         return;
