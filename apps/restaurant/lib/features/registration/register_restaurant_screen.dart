@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../core/theme.dart';
@@ -39,6 +40,8 @@ class _RegisterRestaurantScreenState extends State<RegisterRestaurantScreen> {
   bool _locating = false;
   bool _saving = false;
   String? _error;
+  String? _note;
+  String _gpsSig = '';
 
   @override
   void dispose() {
@@ -62,6 +65,7 @@ class _RegisterRestaurantScreenState extends State<RegisterRestaurantScreen> {
     setState(() {
       _locating = true;
       _error = null;
+      _note = null;
     });
     try {
       final bool enabled = await Geolocator.isLocationServiceEnabled();
@@ -90,6 +94,7 @@ class _RegisterRestaurantScreenState extends State<RegisterRestaurantScreen> {
         _lng = pos.longitude;
         _accuracy = pos.accuracy;
       });
+      await _fillFromPlacemark(pos.latitude, pos.longitude);
     } catch (e) {
       if (!mounted) {
         return;
@@ -110,6 +115,45 @@ class _RegisterRestaurantScreenState extends State<RegisterRestaurantScreen> {
           _locating = false;
         });
       }
+    }
+  }
+
+  Future<void> _fillFromPlacemark(double lat, double lng) async {
+    try {
+      final List<Placemark> list = await placemarkFromCoordinates(lat, lng);
+      if (!mounted || list.isEmpty) {
+        return;
+      }
+      final Placemark p = list.first;
+      String pick(String? v) => (v ?? '').trim();
+      final String area =
+          pick(p.subLocality).isNotEmpty ? pick(p.subLocality) : pick(p.street);
+      setState(() {
+        if (area.isNotEmpty) {
+          _area.text = area;
+        }
+        if (pick(p.locality).isNotEmpty) {
+          _city.text = pick(p.locality);
+        }
+        if (pick(p.subAdministrativeArea).isNotEmpty) {
+          _district.text = pick(p.subAdministrativeArea);
+        }
+        if (pick(p.administrativeArea).isNotEmpty) {
+          _state.text = pick(p.administrativeArea);
+        }
+        if (pick(p.postalCode).isNotEmpty) {
+          _pincode.text = pick(p.postalCode);
+        }
+        _gpsSig = '${_area.text.trim()}|${_city.text.trim()}|${_pincode.text.trim()}';
+        _note = 'Address filled from your location. Please check it and correct anything wrong.';
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _note = 'Location captured, but the address could not be filled automatically. Please type it.';
+      });
     }
   }
 
@@ -146,8 +190,6 @@ class _RegisterRestaurantScreenState extends State<RegisterRestaurantScreen> {
       problem = 'Please enter a valid 6 digit pincode.';
     } else if (city.isEmpty || district.isEmpty || stateName.isEmpty) {
       problem = 'Please enter your city, district and state.';
-    } else if (_lat == null || _lng == null) {
-      problem = 'Please tap "Use my current location" while you are inside your restaurant.';
     } else if (pkg == null || pkg < 0 || pkg > 200) {
       problem = 'Packaging charge must be between 0 and 200 rupees.';
     } else if (prep == null || prep < 5 || prep > 120) {
@@ -168,6 +210,37 @@ class _RegisterRestaurantScreenState extends State<RegisterRestaurantScreen> {
       _saving = true;
       _error = null;
     });
+    // GPS is used only if the address was filled from GPS and not edited.
+    // Otherwise the TYPED address is looked up on the map.
+    double? lat;
+    double? lng;
+    final bool gpsMatches =
+        _lat != null && _lng != null && _gpsSig == '$area|$city|$pin';
+    if (gpsMatches) {
+      lat = _lat;
+      lng = _lng;
+    } else {
+      try {
+        final List<Location> found = await locationFromAddress(
+          '$area, $city, $district, $stateName, $pin, India',
+        );
+        if (found.isNotEmpty) {
+          lat = found.first.latitude;
+          lng = found.first.longitude;
+        }
+      } catch (_) {}
+    }
+    if (lat == null || lng == null) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _saving = false;
+        _error =
+            'We could not find this address on the map. Check the area, city and pincode, or tap "Use my current location" while you are inside your restaurant.';
+      });
+      return;
+    }
     try {
       await FirebaseFirestore.instance
           .collection('restaurants')
@@ -187,8 +260,8 @@ class _RegisterRestaurantScreenState extends State<RegisterRestaurantScreen> {
         'state': stateName,
         'pincode': pin,
         'addressLine': '$house, $area, $city, $district, $stateName - $pin',
-        'lat': _lat!,
-        'lng': _lng!,
+        'lat': lat,
+        'lng': lng,
         'deliveryRadiusKm': _radius.round(),
         'packagingChargePaise': pkg! * 100,
         'prepTimeMin': prep!,
@@ -299,7 +372,7 @@ class _RegisterRestaurantScreenState extends State<RegisterRestaurantScreen> {
           _field(_state, 'State'),
           _title('Restaurant location'),
           const Text(
-            'Stand inside your restaurant and tap the button. Customers near this location will see you.',
+            'Best: stand inside your restaurant and tap the button. It fills the address from your location. If you type the address yourself, we find its place on the map from what you typed.',
           ),
           const SizedBox(height: 10),
           OutlinedButton.icon(
@@ -326,6 +399,11 @@ class _RegisterRestaurantScreenState extends State<RegisterRestaurantScreen> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
+            ),
+          if (_note != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(_note!),
             ),
           _title('Delivery and charges'),
           Text('Delivery radius: ${_radius.round()} km'),
