@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/geo.dart';
 import '../../core/theme.dart';
@@ -263,12 +264,198 @@ class _AvailableOrdersState extends State<_AvailableOrders> {
     }
   }
 
+  Widget _info(IconData icon, String text, {Color color = TwingaColors.blue}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withAlpha(25),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text)),
+        ],
+      ),
+    );
+  }
+
+  Widget _requestCard({
+    required String orderId,
+    required String restaurant,
+    required int toRestaurant,
+    required int dropMeters,
+    required int earnPaise,
+    required int collectPaise,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE3EAF7)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x140A2A8F),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const CircleAvatar(
+                backgroundColor: Color(0xFFE3EEFF),
+                child: Icon(Icons.storefront, color: TwingaColors.blue),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  restaurant,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: TwingaColors.ink,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5FC),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Pickup', style: TextStyle(fontSize: 11)),
+                      Text(
+                        '${(toRestaurant / 1000).toStringAsFixed(1)} km away',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5FC),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Drop', style: TextStyle(fontSize: 11)),
+                      Text(
+                        '${(dropMeters / 1000).toStringAsFixed(1)} km trip',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F6EC),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('You earn', style: TextStyle(fontSize: 12)),
+                      Text(
+                        _rupees(earnPaise),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: TwingaColors.veg,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text('Collect cash', style: TextStyle(fontSize: 12)),
+                    Text(
+                      _rupees(collectPaise),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: TwingaColors.ink,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _accepting == null ? () => _accept(orderId) : null,
+              icon: _accepting == orderId
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.check),
+              label: const Text(
+                'Accept delivery',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: TwingaColors.veg,
+                minimumSize: const Size.fromHeight(50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Position? pos = _pos;
     final Map<String, dynamic>? cfg = _config;
     if (_configLoaded && (cfg == null || cfg['dispatchRadiusKm'] is! num)) {
-      return const Text('Delivery settings are not available right now.');
+      return _info(
+        Icons.settings_suggest_outlined,
+        'Delivery settings are not available right now.',
+        color: TwingaColors.error,
+      );
     }
     final List<Widget> cards = <Widget>[];
     if (pos != null && cfg != null) {
@@ -302,58 +489,13 @@ class _AvailableOrdersState extends State<_AvailableOrders> {
           continue;
         }
         cards.add(
-          Card(
-            color: Colors.white,
-            elevation: 1,
-            margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    (d['restaurantName'] ?? '').toString(),
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: TwingaColors.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Pickup ${(toRestaurant / 1000).toStringAsFixed(1)} km from you  ·  Drop ${(_intOf(d['distanceMeters']) / 1000).toStringAsFixed(1)} km',
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'You earn ${_rupees(_intOf(d['riderPayPaise']))}',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: TwingaColors.veg,
-                    ),
-                  ),
-                  Text('Collect ${_rupees(_intOf(d['totalPaise']))} cash from the customer'),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _accepting == null ? () => _accept(doc.id) : null,
-                      child: _accepting == doc.id
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text('Accept delivery'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          _requestCard(
+            orderId: doc.id,
+            restaurant: (d['restaurantName'] ?? '').toString(),
+            toRestaurant: toRestaurant,
+            dropMeters: _intOf(d['distanceMeters']),
+            earnPaise: _intOf(d['riderPayPaise']),
+            collectPaise: _intOf(d['totalPaise']),
           ),
         );
       }
@@ -361,26 +503,49 @@ class _AvailableOrdersState extends State<_AvailableOrders> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Delivery requests near you',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: TwingaColors.ink,
-          ),
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Delivery requests near you',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: TwingaColors.ink,
+                ),
+              ),
+            ),
+            if (cards.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: TwingaColors.orange,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${cards.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+          ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         if (_locError != null)
-          Text(_locError!, style: const TextStyle(color: TwingaColors.error))
+          _info(Icons.location_off, _locError!, color: TwingaColors.error)
         else if (pos == null)
-          const Text('Finding your location...'),
+          _info(Icons.my_location, 'Finding your location...'),
         if (_error != null)
-          Text(_error!, style: const TextStyle(color: TwingaColors.error)),
-        const SizedBox(height: 8),
+          _info(Icons.error_outline, _error!, color: TwingaColors.error),
         if (pos != null && cards.isEmpty)
-          const Text('No delivery requests near you right now. Stay online.'),
+          _info(
+            Icons.two_wheeler,
+            'No delivery requests near you right now. Stay online, new requests appear here by themselves.',
+          ),
         ...cards,
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         const Text(
           'Keep this app open while you are online to receive requests.',
           style: TextStyle(fontSize: 12),
@@ -421,6 +586,18 @@ class _ActiveDeliveryState extends State<_ActiveDelivery> {
   void dispose() {
     _otp.dispose();
     super.dispose();
+  }
+
+  Future<void> _call(String phone) async {
+    bool ok = false;
+    try {
+      ok = await launchUrl(Uri(scheme: 'tel', path: phone));
+    } catch (_) {}
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open the dialer. Number: $phone')),
+      );
+    }
   }
 
   Future<void> _pickedUp() async {
@@ -472,18 +649,70 @@ class _ActiveDeliveryState extends State<_ActiveDelivery> {
   }
 
   Widget _card(List<Widget> children) {
-    return Card(
-      color: Colors.white,
-      elevation: 1,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: children,
-        ),
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE3EAF7)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x140A2A8F),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    );
+  }
+
+  Widget _progress(String status) {
+    final int idx = status == 'picked' ? 2 : (status == 'ready' ? 1 : 0);
+    const List<String> labels = <String>[
+      'Accepted',
+      'Ready',
+      'Picked up',
+      'Delivered',
+    ];
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (int i = 0; i < 4; i++) ...[
+          if (i > 0)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Container(
+                  height: 3,
+                  color: i <= idx ? TwingaColors.blue : const Color(0xFFD5E3FA),
+                ),
+              ),
+            ),
+          Column(
+            children: [
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: i <= idx ? TwingaColors.blue : const Color(0xFFD5E3FA),
+                ),
+                child: i <= idx
+                    ? const Icon(Icons.check, size: 14, color: Colors.white)
+                    : null,
+              ),
+              const SizedBox(height: 4),
+              Text(labels[i], style: const TextStyle(fontSize: 10)),
+            ],
+          ),
+        ],
+      ],
     );
   }
 
@@ -506,23 +735,55 @@ class _ActiveDeliveryState extends State<_ActiveDelivery> {
               .get();
         }
         final int total = _intOf(d['totalPaise']);
+        final int earn = _intOf(d['riderPayPaise']);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Active delivery',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: TwingaColors.ink,
-              ),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Active delivery',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: TwingaColors.ink,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F6EC),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    'You earn ${_rupees(earn)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: TwingaColors.veg,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 14),
+            _card([_progress(status)]),
             _card([
-              const Text('Pickup', style: TextStyle(fontWeight: FontWeight.w700)),
+              const Row(
+                children: [
+                  Icon(Icons.storefront, color: TwingaColors.blue, size: 18),
+                  SizedBox(width: 6),
+                  Text(
+                    'PICKUP',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
               Text(
                 (d['restaurantName'] ?? '').toString(),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
               ),
               FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                 future: _restFuture,
@@ -537,14 +798,40 @@ class _ActiveDeliveryState extends State<_ActiveDelivery> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (addr.isNotEmpty) Text(addr),
-                      if (phone.isNotEmpty) Text('Phone: $phone'),
+                      if (phone.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => _call(phone),
+                            icon: const Icon(Icons.call),
+                            label: Text('Call restaurant  ·  $phone'),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(46),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   );
                 },
               ),
             ]),
             _card([
-              const Text('Drop', style: TextStyle(fontWeight: FontWeight.w700)),
+              const Row(
+                children: [
+                  Icon(Icons.home_outlined, color: TwingaColors.veg, size: 18),
+                  SizedBox(width: 6),
+                  Text(
+                    'DROP',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
               StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                 stream: _dropStream,
                 builder: (context, ds) {
@@ -562,7 +849,7 @@ class _ActiveDeliveryState extends State<_ActiveDelivery> {
                         Text(
                           name,
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 17,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -575,53 +862,113 @@ class _ActiveDeliveryState extends State<_ActiveDelivery> {
             ]),
             if (status == 'accepted' || status == 'preparing')
               _card([
-                Text(
-                  status == 'accepted'
-                      ? 'The restaurant accepted the order. Go to the restaurant.'
-                      : 'The food is being prepared. Go to the restaurant.',
+                Row(
+                  children: [
+                    const Icon(Icons.soup_kitchen_outlined, color: TwingaColors.blue),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        status == 'accepted'
+                            ? 'The restaurant accepted the order. Go to the restaurant.'
+                            : 'The food is being prepared. Go to the restaurant.',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 const Text('You can pick it up once it is marked ready.'),
               ]),
             if (status == 'ready')
               _card([
-                const Text('The food is ready for pickup.'),
+                const Row(
+                  children: [
+                    Icon(Icons.check_circle, color: TwingaColors.veg),
+                    SizedBox(width: 10),
+                    Text(
+                      'The food is ready for pickup.',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
-                  child: FilledButton(
+                  child: FilledButton.icon(
                     onPressed: _busy ? null : _pickedUp,
-                    child: const Text('Picked up from restaurant'),
+                    icon: const Icon(Icons.shopping_bag_outlined),
+                    label: const Text(
+                      'Picked up from restaurant',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
                   ),
                 ),
               ]),
             if (status == 'picked')
               _card([
-                Text(
-                  'Collect ${_rupees(total)} in cash',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: TwingaColors.veg,
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF4E0),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text('Collect cash from the customer'),
+                      Text(
+                        _rupees(total),
+                        style: const TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w800,
+                          color: TwingaColors.ink,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 TextField(
                   controller: _otp,
                   keyboardType: TextInputType.number,
                   maxLength: 4,
-                  decoration: const InputDecoration(
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 10,
+                  ),
+                  decoration: InputDecoration(
                     labelText: 'Customer OTP (4 digits)',
                     counterText: '',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
-                  child: FilledButton(
+                  child: FilledButton.icon(
                     onPressed: _busy ? null : _deliver,
-                    child: const Text('Confirm delivery'),
+                    icon: const Icon(Icons.verified),
+                    label: const Text(
+                      'Confirm delivery',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: TwingaColors.veg,
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
                   ),
                 ),
               ]),
