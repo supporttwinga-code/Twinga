@@ -9,11 +9,14 @@ class RiderHomeScreen extends StatelessWidget {
     required this.data,
   });
 
-  static const Color navy = Color(0xFF071A4A);
-  static const Color blue = Color(0xFF075CF5);
-  static const Color lightBlue = Color(0xFFEAF1FF);
-  static const Color background = Color(0xFFF4F7FF);
-  static const Color green = Color(0xFF16B957);
+  static const Color navy = Color(0xFF071735);
+  static const Color blue = Color(0xFF1765F5);
+  static const Color blueDark = Color(0xFF1045B5);
+  static const Color lightBlue = Color(0xFFEDF3FF);
+  static const Color background = Color(0xFFF5F7FC);
+  static const Color green = Color(0xFF13B96B);
+  static const Color textGrey = Color(0xFF77839A);
+  static const Color borderColor = Color(0xFFE8EDF5);
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +30,22 @@ class RiderHomeScreen extends StatelessWidget {
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
-                  SliverToBoxAdapter(child: _header(context)),
+                  SliverToBoxAdapter(child: _header()),
                   SliverToBoxAdapter(child: _statistics()),
+                  SliverToBoxAdapter(child: _sectionHeading(
+                    'Your Current Delivery',
+                    'Manage your active order',
+                  )),
                   SliverToBoxAdapter(child: _activeOrder()),
-                  SliverToBoxAdapter(child: _quickActions(context)),
+                  SliverToBoxAdapter(child: _sectionHeading(
+                    'Quick Access',
+                    'Everything you need in one place',
+                  )),
+                  SliverToBoxAdapter(child: _quickActions()),
                   SliverToBoxAdapter(child: _achievement()),
                   SliverToBoxAdapter(child: _locationCard()),
                   const SliverToBoxAdapter(
-                    child: SizedBox(height: 24),
+                    child: SizedBox(height: 25),
                   ),
                 ],
               ),
@@ -46,26 +57,30 @@ class RiderHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _header(BuildContext context) {
+  Widget _header() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 15, 20, 28),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 30),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [navy, Color(0xFF0649C9), blue],
+          colors: [
+            Color(0xFF061638),
+            Color(0xFF0B3B91),
+            Color(0xFF1765F5),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(32),
+          bottom: Radius.circular(34),
         ),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              _circleButton(
+              _headerButton(
                 Icons.menu_rounded,
-                onTap: data.onMenu,
+                data.onMenu,
               ),
               const Spacer(),
               const Column(
@@ -74,17 +89,19 @@ class RiderHomeScreen extends StatelessWidget {
                     'TWINGA',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 28,
+                      fontSize: 27,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 1.5,
+                      letterSpacing: 2,
                     ),
                   ),
+                  SizedBox(height: 2),
                   Text(
-                    'Good Food • Faster',
+                    'DELIVERY PARTNER',
                     style: TextStyle(
                       color: Colors.white70,
-                      fontSize: 11,
-                      letterSpacing: .5,
+                      fontSize: 9,
+                      letterSpacing: 2,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
@@ -93,26 +110,28 @@ class RiderHomeScreen extends StatelessWidget {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  _circleButton(
+                  _headerButton(
                     Icons.notifications_none_rounded,
-                    onTap: data.onNotifications,
+                    data.onNotifications,
                   ),
                   if (data.unreadNotifications > 0)
                     Positioned(
-                      right: -2,
-                      top: -3,
+                      top: -4,
+                      right: -4,
                       child: Container(
                         padding: const EdgeInsets.all(5),
                         decoration: const BoxDecoration(
-                          color: Colors.red,
+                          color: Color(0xFFFF4757),
                           shape: BoxShape.circle,
                         ),
                         child: Text(
-                          data.unreadNotifications.toString(),
+                          data.unreadNotifications > 99
+                              ? '99+'
+                              : data.unreadNotifications.toString(),
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
@@ -121,7 +140,7 @@ class RiderHomeScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 27),
           Row(
             children: [
               Container(
@@ -129,27 +148,27 @@ class RiderHomeScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: const Color(0xFF60A5FF),
-                    width: 3,
+                    color: const Color(0xFF8DB9FF),
+                    width: 2.5,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: blue.withOpacity(.4),
-                      blurRadius: 18,
+                      color: Colors.black.withOpacity(.18),
+                      blurRadius: 16,
                     ),
                   ],
                 ),
                 child: CircleAvatar(
-                  radius: 39,
-                  backgroundColor: lightBlue,
+                  radius: 37,
+                  backgroundColor: Colors.white,
                   backgroundImage: data.profileImageUrl.isNotEmpty
                       ? NetworkImage(data.profileImageUrl)
                       : null,
                   child: data.profileImageUrl.isEmpty
                       ? const Icon(
-                          Icons.person,
-                          size: 42,
+                          Icons.person_rounded,
                           color: blue,
+                          size: 40,
                         )
                       : null,
                 ),
@@ -176,70 +195,23 @@ class RiderHomeScreen extends StatelessWidget {
                         if (data.isVerified) ...[
                           const SizedBox(width: 5),
                           const Icon(
-                            Icons.verified,
-                            color: Color(0xFF50B7FF),
+                            Icons.verified_rounded,
+                            color: Color(0xFF71C7FF),
                             size: 19,
                           ),
                         ],
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     const Text(
-                      'Delivery Partner',
+                      'Welcome to your delivery dashboard',
                       style: TextStyle(
                         color: Colors.white70,
-                        fontSize: 13,
+                        fontSize: 11,
                       ),
                     ),
                     const SizedBox(height: 13),
-                    GestureDetector(
-                      onTap: data.onToggleOnline,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 9,
-                        ),
-                        decoration: BoxDecoration(
-                          color: data.isOnline
-                              ? green.withOpacity(.18)
-                              : Colors.white.withOpacity(.12),
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(
-                            color: data.isOnline
-                                ? green
-                                : Colors.white54,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.circle,
-                              size: 11,
-                              color: data.isOnline
-                                  ? const Color(0xFF4DFF88)
-                                  : Colors.white70,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              data.isOnline ? 'ONLINE' : 'OFFLINE',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(
-                              Icons.chevron_right,
-                              color: Colors.white,
-                              size: 19,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    _onlineToggle(),
                   ],
                 ),
               ),
@@ -250,21 +222,98 @@ class RiderHomeScreen extends StatelessWidget {
     );
   }
 
+  Widget _onlineToggle() {
+    return GestureDetector(
+      onTap: data.onToggleOnline,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 9,
+        ),
+        decoration: BoxDecoration(
+          color: data.isOnline
+              ? green.withOpacity(.20)
+              : Colors.white.withOpacity(.13),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: data.isOnline ? green : Colors.white38,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(
+                color: data.isOnline
+                    ? const Color(0xFF55FF9B)
+                    : Colors.white70,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              data.isOnline ? 'YOU ARE ONLINE' : 'YOU ARE OFFLINE',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 10,
+                letterSpacing: .6,
+              ),
+            ),
+            const SizedBox(width: 7),
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _headerButton(
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return Material(
+      color: Colors.white.withOpacity(.13),
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 43,
+          height: 43,
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: 23,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _statistics() {
     return Transform.translate(
-      offset: const Offset(0, -17),
+      offset: const Offset(0, -19),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(
-          vertical: 20,
-          horizontal: 8,
+          vertical: 18,
+          horizontal: 7,
         ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: borderColor),
           boxShadow: [
             BoxShadow(
-              color: navy.withOpacity(.09),
+              color: navy.withOpacity(.07),
               blurRadius: 22,
               offset: const Offset(0, 8),
             ),
@@ -280,16 +329,16 @@ class RiderHomeScreen extends StatelessWidget {
                 data.earningsTrend,
               ),
             ),
-            _verticalDivider(),
+            _statDivider(),
             Expanded(
               child: _statItem(
-                Icons.assignment_turned_in_rounded,
-                'Total Orders',
+                Icons.receipt_long_rounded,
+                "Today's Orders",
                 data.todayOrders.toString(),
                 data.ordersTrend,
               ),
             ),
-            _verticalDivider(),
+            _statDivider(),
             Expanded(
               child: _statItem(
                 Icons.route_rounded,
@@ -313,43 +362,50 @@ class RiderHomeScreen extends StatelessWidget {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(11),
+          width: 43,
+          height: 43,
           decoration: const BoxDecoration(
             color: lightBlue,
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: blue, size: 23),
+          child: Icon(
+            icon,
+            color: blue,
+            size: 22,
+          ),
         ),
         const SizedBox(height: 10),
         Text(
           title,
           textAlign: TextAlign.center,
+          maxLines: 2,
           style: const TextStyle(
-            fontSize: 10,
-            color: Color(0xFF63708A),
-            fontWeight: FontWeight.w600,
+            color: textGrey,
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 5),
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
             value,
             style: const TextStyle(
               color: navy,
-              fontSize: 21,
+              fontSize: 19,
               fontWeight: FontWeight.w900,
             ),
           ),
         ),
         if (trend.isNotEmpty) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: 5),
           Text(
             trend,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: green,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
@@ -357,11 +413,47 @@ class RiderHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _verticalDivider() {
+  Widget _statDivider() {
     return Container(
       width: 1,
-      height: 95,
-      color: const Color(0xFFE6EBF5),
+      height: 88,
+      color: borderColor,
+    );
+  }
+
+  Widget _sectionHeading(
+    String title,
+    String subtitle,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(19, 0, 19, 13),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: navy,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: textGrey,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -369,17 +461,17 @@ class RiderHomeScreen extends StatelessWidget {
     final order = data.activeOrder;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(17, 0, 17, 20),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 23),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: const Color(0xFFDCE7FF)),
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: borderColor),
           boxShadow: [
             BoxShadow(
-              color: blue.withOpacity(.10),
-              blurRadius: 22,
-              offset: const Offset(0, 7),
+              color: navy.withOpacity(.06),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -389,32 +481,33 @@ class RiderHomeScreen extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 14,
+                      horizontal: 17,
+                      vertical: 15,
                     ),
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [navy, blue],
+                        colors: [navy, blueDark, blue],
                       ),
                       borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(25),
+                        top: Radius.circular(24),
                       ),
                     ),
                     child: Row(
                       children: [
                         const Icon(
                           Icons.bolt_rounded,
-                          color: Color(0xFFFFD84D),
-                          size: 25,
+                          color: Color(0xFFFFD65A),
+                          size: 23,
                         ),
                         const SizedBox(width: 8),
                         const Expanded(
                           child: Text(
-                            'ACTIVE ORDER',
+                            'ACTIVE DELIVERY',
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w900,
-                              fontSize: 16,
+                              fontSize: 14,
+                              letterSpacing: .8,
                             ),
                           ),
                         ),
@@ -424,13 +517,15 @@ class RiderHomeScreen extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(17),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
                         Row(
                           children: [
-                            _restaurantImage(order.restaurantImageUrl),
-                            const SizedBox(width: 13),
+                            _restaurantImage(
+                              order.restaurantImageUrl,
+                            ),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment:
@@ -442,27 +537,29 @@ class RiderHomeScreen extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       color: navy,
-                                      fontSize: 18,
+                                      fontSize: 16,
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
                                   const SizedBox(height: 7),
                                   Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Icon(
-                                        Icons.location_on,
+                                        Icons.storefront_rounded,
                                         color: blue,
-                                        size: 17,
+                                        size: 16,
                                       ),
-                                      const SizedBox(width: 4),
+                                      const SizedBox(width: 5),
                                       Expanded(
                                         child: Text(
                                           order.pickupAddress,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
-                                            color: Color(0xFF596781),
-                                            fontSize: 12,
+                                            color: textGrey,
+                                            fontSize: 11,
                                           ),
                                         ),
                                       ),
@@ -473,40 +570,51 @@ class RiderHomeScreen extends StatelessWidget {
                             ),
                             const SizedBox(width: 5),
                             Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.end,
                               children: [
                                 Text(
                                   '₹${order.payout.toStringAsFixed(0)}',
                                   style: const TextStyle(
                                     color: navy,
-                                    fontSize: 21,
+                                    fontSize: 20,
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
                                 const Text(
-                                  'Payout',
+                                  'PAYOUT',
                                   style: TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 10,
+                                    color: textGrey,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: .7,
                                   ),
                                 ),
                               ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 17),
                         Container(
                           padding: const EdgeInsets.all(13),
                           decoration: BoxDecoration(
                             color: background,
                             borderRadius: BorderRadius.circular(17),
+                            border: Border.all(color: borderColor),
                           ),
                           child: Row(
                             children: [
-                              const CircleAvatar(
-                                backgroundColor: lightBlue,
-                                child: Icon(
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: const BoxDecoration(
+                                  color: lightBlue,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
                                   Icons.home_rounded,
                                   color: blue,
+                                  size: 22,
                                 ),
                               ),
                               const SizedBox(width: 11),
@@ -519,8 +627,9 @@ class RiderHomeScreen extends StatelessWidget {
                                       'CUSTOMER DESTINATION',
                                       style: TextStyle(
                                         color: blue,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w800,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: .6,
                                       ),
                                     ),
                                     const SizedBox(height: 5),
@@ -530,8 +639,8 @@ class RiderHomeScreen extends StatelessWidget {
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
                                         color: navy,
+                                        fontSize: 12,
                                         fontWeight: FontWeight.w700,
-                                        fontSize: 13,
                                       ),
                                     ),
                                   ],
@@ -540,35 +649,41 @@ class RiderHomeScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 15),
                         SizedBox(
                           width: double.infinity,
-                          height: 56,
+                          height: 53,
                           child: ElevatedButton(
                             onPressed: order.onPrimaryAction,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: blue,
                               foregroundColor: Colors.white,
-                              elevation: 5,
-                              shadowColor: blue.withOpacity(.35),
+                              elevation: 4,
+                              shadowColor: blue.withOpacity(.25),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(17),
+                                borderRadius: BorderRadius.circular(16),
                               ),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.navigation_rounded),
-                                const SizedBox(width: 10),
+                                const Icon(
+                                  Icons.navigation_rounded,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 9),
                                 Text(
                                   order.primaryActionLabel,
                                   style: const TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
                                 const SizedBox(width: 7),
-                                const Icon(Icons.arrow_forward_rounded),
+                                const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 18,
+                                ),
                               ],
                             ),
                           ),
@@ -584,11 +699,15 @@ class RiderHomeScreen extends StatelessWidget {
 
   Widget _noActiveOrder() {
     return Padding(
-      padding: const EdgeInsets.all(25),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 22,
+        vertical: 27,
+      ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(17),
+            width: 75,
+            height: 75,
             decoration: const BoxDecoration(
               color: lightBlue,
               shape: BoxShape.circle,
@@ -596,27 +715,60 @@ class RiderHomeScreen extends StatelessWidget {
             child: const Icon(
               Icons.delivery_dining_rounded,
               color: blue,
-              size: 42,
+              size: 43,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           const Text(
             'No Active Order',
             style: TextStyle(
               color: navy,
+              fontSize: 18,
               fontWeight: FontWeight.w900,
-              fontSize: 19,
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 7),
           Text(
             data.isOnline
                 ? 'You are online. New order requests will appear here.'
-                : 'Go online when you are ready to receive orders.',
+                : 'Go online when you are ready to receive delivery requests.',
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Colors.black54,
+              color: textGrey,
               fontSize: 12,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 13),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 13,
+              vertical: 7,
+            ),
+            decoration: BoxDecoration(
+              color: data.isOnline
+                  ? green.withOpacity(.09)
+                  : const Color(0xFFF0F2F6),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.circle,
+                  size: 8,
+                  color: data.isOnline ? green : textGrey,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  data.isOnline ? 'WAITING FOR REQUESTS' : 'CURRENTLY OFFLINE',
+                  style: TextStyle(
+                    color: data.isOnline ? green : textGrey,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -627,11 +779,11 @@ class RiderHomeScreen extends StatelessWidget {
   Widget _timerBadge(String time) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: 11,
-        vertical: 8,
+        horizontal: 10,
+        vertical: 7,
       ),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(.13),
+        color: Colors.white.withOpacity(.14),
         borderRadius: BorderRadius.circular(30),
         border: Border.all(color: Colors.white30),
       ),
@@ -640,14 +792,15 @@ class RiderHomeScreen extends StatelessWidget {
           const Icon(
             Icons.timer_outlined,
             color: Colors.white,
-            size: 17,
+            size: 15,
           ),
           const SizedBox(width: 5),
           Text(
             time,
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.bold,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
             ),
           ),
         ],
@@ -657,12 +810,15 @@ class RiderHomeScreen extends StatelessWidget {
 
   Widget _restaurantImage(String url) {
     return Container(
-      width: 76,
-      height: 76,
+      width: 69,
+      height: 69,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: blue, width: 2),
+        border: Border.all(
+          color: blue.withOpacity(.7),
+          width: 2,
+        ),
       ),
       child: ClipOval(
         child: url.isNotEmpty
@@ -682,14 +838,14 @@ class RiderHomeScreen extends StatelessWidget {
       child: const Icon(
         Icons.storefront_rounded,
         color: blue,
-        size: 34,
+        size: 30,
       ),
     );
   }
 
-  Widget _quickActions(BuildContext context) {
+  Widget _quickActions() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(17, 0, 17, 22),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 22),
       child: Row(
         children: [
           Expanded(
@@ -699,7 +855,7 @@ class RiderHomeScreen extends StatelessWidget {
               data.onEarnings,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 9),
           Expanded(
             child: _actionCard(
               Icons.receipt_long_rounded,
@@ -707,7 +863,7 @@ class RiderHomeScreen extends StatelessWidget {
               data.onHistory,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 9),
           Expanded(
             child: _actionCard(
               Icons.account_balance_wallet_rounded,
@@ -715,10 +871,10 @@ class RiderHomeScreen extends StatelessWidget {
               data.onPayouts,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 9),
           Expanded(
             child: _actionCard(
-              Icons.headset_mic_rounded,
+              Icons.support_agent_rounded,
               'Support',
               data.onSupport,
             ),
@@ -735,40 +891,54 @@ class RiderHomeScreen extends StatelessWidget {
   ) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(19),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(19),
+        borderRadius: BorderRadius.circular(18),
         child: Container(
-          height: 105,
+          height: 103,
           padding: const EdgeInsets.symmetric(
-            horizontal: 3,
-            vertical: 13,
+            horizontal: 2,
+            vertical: 12,
           ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(19),
-            border: Border.all(color: const Color(0xFFE5EBF7)),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: borderColor),
+            boxShadow: [
+              BoxShadow(
+                color: navy.withOpacity(.025),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: blue, size: 29),
-              const SizedBox(height: 10),
+              Container(
+                width: 39,
+                height: 39,
+                decoration: const BoxDecoration(
+                  color: lightBlue,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: blue,
+                  size: 21,
+                ),
+              ),
+              const SizedBox(height: 8),
               FittedBox(
+                fit: BoxFit.scaleDown,
                 child: Text(
                   title,
                   style: const TextStyle(
                     color: navy,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-              ),
-              const SizedBox(height: 3),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: Color(0xFF7E8BA4),
-                size: 16,
               ),
             ],
           ),
@@ -783,27 +953,41 @@ class RiderHomeScreen extends StatelessWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(17, 0, 17, 20),
-      padding: const EdgeInsets.all(18),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      padding: const EdgeInsets.all(17),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF06133C), Color(0xFF073C9C)],
+          colors: [
+            Color(0xFF071735),
+            Color(0xFF123E91),
+            Color(0xFF1765F5),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: navy.withOpacity(.17),
-            blurRadius: 16,
+            color: blue.withOpacity(.14),
+            blurRadius: 17,
             offset: const Offset(0, 7),
           ),
         ],
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.emoji_events_rounded,
-            color: Color(0xFFFFD45C),
-            size: 43,
+          Container(
+            width: 53,
+            height: 53,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(.13),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.emoji_events_rounded,
+              color: Color(0xFFFFD65A),
+              size: 31,
+            ),
           ),
           const SizedBox(width: 13),
           Expanded(
@@ -814,8 +998,8 @@ class RiderHomeScreen extends StatelessWidget {
                   data.achievementTitle,
                   style: const TextStyle(
                     color: Colors.white,
+                    fontSize: 14,
                     fontWeight: FontWeight.w900,
-                    fontSize: 15,
                   ),
                 ),
                 if (data.achievementSubtitle.isNotEmpty) ...[
@@ -824,7 +1008,8 @@ class RiderHomeScreen extends StatelessWidget {
                     data.achievementSubtitle,
                     style: const TextStyle(
                       color: Colors.white70,
-                      fontSize: 11,
+                      fontSize: 10,
+                      height: 1.4,
                     ),
                   ),
                 ],
@@ -833,8 +1018,8 @@ class RiderHomeScreen extends StatelessWidget {
           ),
           const Icon(
             Icons.workspace_premium_rounded,
-            color: Color(0xFFFFD45C),
-            size: 48,
+            color: Color(0xFFFFD65A),
+            size: 39,
           ),
         ],
       ),
@@ -843,32 +1028,36 @@ class RiderHomeScreen extends StatelessWidget {
 
   Widget _locationCard() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 17),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(21),
-        border: Border.all(color: const Color(0xFFE1E9FA)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: navy.withOpacity(.05),
-            blurRadius: 15,
+            color: navy.withOpacity(.04),
+            blurRadius: 13,
             offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Row(
         children: [
-          const CircleAvatar(
-            radius: 26,
-            backgroundColor: lightBlue,
-            child: Icon(
+          Container(
+            width: 49,
+            height: 49,
+            decoration: const BoxDecoration(
+              color: lightBlue,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
               Icons.location_on_rounded,
               color: blue,
-              size: 29,
+              size: 26,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 11),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -877,7 +1066,7 @@ class RiderHomeScreen extends StatelessWidget {
                   'Live Location',
                   style: TextStyle(
                     color: navy,
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -886,10 +1075,8 @@ class RiderHomeScreen extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.circle,
-                      size: 9,
-                      color: data.isLocationSharing
-                          ? green
-                          : Colors.grey,
+                      size: 8,
+                      color: data.isLocationSharing ? green : textGrey,
                     ),
                     const SizedBox(width: 5),
                     Flexible(
@@ -897,9 +1084,11 @@ class RiderHomeScreen extends StatelessWidget {
                         data.isLocationSharing
                             ? 'Location sharing active'
                             : 'Location sharing inactive',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Color(0xFF66738C),
-                          fontSize: 11,
+                          color: textGrey,
+                          fontSize: 10,
                         ),
                       ),
                     ),
@@ -908,11 +1097,16 @@ class RiderHomeScreen extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 5),
           OutlinedButton(
             onPressed: data.onViewMap,
             style: OutlinedButton.styleFrom(
               foregroundColor: blue,
               side: const BorderSide(color: blue),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 10,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
               ),
@@ -920,13 +1114,15 @@ class RiderHomeScreen extends StatelessWidget {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.map_outlined, size: 17),
-                SizedBox(width: 5),
+                Icon(Icons.map_outlined, size: 15),
+                SizedBox(width: 4),
                 Text(
-                  'View Map',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  'Map',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-                Icon(Icons.chevron_right, size: 17),
               ],
             ),
           ),
@@ -949,12 +1145,15 @@ class RiderHomeScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(27),
+          top: Radius.circular(25),
+        ),
+        border: const Border(
+          top: BorderSide(color: borderColor),
         ),
         boxShadow: [
           BoxShadow(
-            color: navy.withOpacity(.09),
-            blurRadius: 18,
+            color: navy.withOpacity(.07),
+            blurRadius: 17,
             offset: const Offset(0, -5),
           ),
         ],
@@ -966,36 +1165,37 @@ class RiderHomeScreen extends StatelessWidget {
           return Expanded(
             child: InkWell(
               onTap: () => data.onTabSelected(index),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(15),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      icons[index],
-                      size: 26,
-                      color: selected ? blue : const Color(0xFF64718A),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: selected ? lightBlue : Colors.transparent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Icon(
+                        icons[index],
+                        size: 22,
+                        color: selected ? blue : textGrey,
+                      ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 4),
                     Text(
                       labels[index],
                       style: TextStyle(
-                        color: selected ? blue : const Color(0xFF64718A),
-                        fontSize: 12,
+                        color: selected ? blue : textGrey,
+                        fontSize: 10,
                         fontWeight: selected
                             ? FontWeight.w900
-                            : FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      height: 4,
-                      width: selected ? 34 : 0,
-                      decoration: BoxDecoration(
-                        color: blue,
-                        borderRadius: BorderRadius.circular(10),
+                            : FontWeight.w600,
                       ),
                     ),
                   ],
@@ -1004,25 +1204,6 @@ class RiderHomeScreen extends StatelessWidget {
             ),
           );
         }),
-      ),
-    );
-  }
-
-  Widget _circleButton(
-    IconData icon, {
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.white.withOpacity(.12),
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: SizedBox(
-          width: 43,
-          height: 43,
-          child: Icon(icon, color: Colors.white, size: 25),
-        ),
       ),
     );
   }
