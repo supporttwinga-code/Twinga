@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../delivery/delivery_area.dart';
 import '../registration/register_rider_screen.dart';
 
 Widget _message(String text) {
@@ -204,7 +205,10 @@ class _RiderStatus extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('Delivery requests will appear here in the next update.'),
+              if (isOnline)
+                DeliveryArea(uid: uid, riderName: name, riderPhone: phone)
+              else
+                const Text('Go online to see delivery requests.'),
             ],
           ],
         );
