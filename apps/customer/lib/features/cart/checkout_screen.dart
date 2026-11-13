@@ -8,7 +8,7 @@ import '../../core/money.dart';
 import '../../core/theme.dart';
 import '../address/address_model.dart';
 import '../address/address_screen.dart';
-import '../orders/order_status_screen.dart';
+import '../orders/order_success_screen.dart';
 import '../restaurants/restaurant_models.dart';
 import 'cart.dart';
 import 'pricing.dart';
@@ -30,76 +30,6 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _placing = false;
   String? _error;
-
-  Future<bool> _confirm(
-    BuildContext context,
-    Restaurant r,
-    SavedAddress addr,
-    Bill b,
-  ) async {
-    final bool? yes = await showModalBottomSheet<bool>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Confirm your order',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: TwingaColors.ink,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                r.name,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Delivery address',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-              Text(addr.label, style: const TextStyle(fontWeight: FontWeight.w600)),
-              Text(addr.addressLine),
-              if (addr.landmark.isNotEmpty) Text('Landmark: ${addr.landmark}'),
-              const SizedBox(height: 12),
-              const Text(
-                'Payment',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-              Text('Cash on delivery. Pay ${rupees(b.totalPaise)} to the delivery partner.'),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(false),
-                      child: const Text('Go back'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(true),
-                      child: Text('Confirm  ·  ${rupees(b.totalPaise)}'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    return yes == true;
-  }
 
   Future<void> _placeOrder({
     required User user,
@@ -231,7 +161,186 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
-        builder: (context) => OrderStatusScreen(orderId: placedId!),
+        builder: (context) => OrderSuccessScreen(orderId: placedId!),
+      ),
+    );
+  }
+
+  Future<void> _confirm({
+    required User user,
+    required String userName,
+    required Restaurant shown,
+    required PricingConfig cfg,
+    required SavedAddress addr,
+    required Bill bill,
+  }) async {
+    final bool? ok = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Confirm your order',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: TwingaColors.ink,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.location_on, color: TwingaColors.orange),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Deliver to ${addr.label}',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        Text(addr.addressLine),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 28),
+              const Row(
+                children: [
+                  Icon(Icons.payments_outlined, color: TwingaColors.veg),
+                  SizedBox(width: 10),
+                  Text(
+                    'Cash on delivery',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+              const Divider(height: 28),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'To pay',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  ),
+                  Text(
+                    rupees(bill.totalPaise),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(sheetContext).pop(true),
+                  child: const Text('Confirm and place order'),
+                ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.of(sheetContext).pop(false),
+                  child: const Text('Go back'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (ok != true || !mounted) {
+      return;
+    }
+    await _placeOrder(
+      user: user,
+      userName: userName,
+      shown: shown,
+      cfg: cfg,
+      addr: addr,
+    );
+  }
+
+  Widget _paymentCard() {
+    return Card(
+      color: Colors.white,
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Payment method',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: TwingaColors.ink,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Row(
+              children: [
+                Icon(Icons.check_circle, color: TwingaColors.veg),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Cash on delivery',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      Text('Pay in cash when your order arrives'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Opacity(
+              opacity: 0.5,
+              child: Row(
+                children: [
+                  const Icon(Icons.radio_button_unchecked),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'UPI',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black12,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Coming soon',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -312,52 +421,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [Text(label, style: style), Text(value, style: style)],
-      ),
-    );
-  }
-
-  Widget _paymentCard() {
-    return Card(
-      color: Colors.white,
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: const Padding(
-        padding: EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Payment method',
-              style: TextStyle(fontWeight: FontWeight.w800),
-            ),
-            SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.radio_button_checked, color: TwingaColors.blue),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Cash on delivery',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 10),
-            Row(
-              children: [
-                Icon(Icons.radio_button_off, color: Colors.black26),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'UPI  ·  Coming soon',
-                    style: TextStyle(color: Colors.black38),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -492,8 +555,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
           ),
-        const SizedBox(height: 12),
-        _paymentCard(),
         if (b != null) ...[
           const SizedBox(height: 12),
           Card(
@@ -522,6 +583,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          _paymentCard(),
         ],
         if (_error != null)
           Padding(
@@ -534,19 +597,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         const SizedBox(height: 16),
         FilledButton(
           onPressed: canPlace
-              ? () async {
-                  final bool ok = await _confirm(context, r, addr!, b!);
-                  if (!ok || !mounted) {
-                    return;
-                  }
-                  await _placeOrder(
+              ? () => _confirm(
                     user: user,
                     userName: userName,
                     shown: r,
                     cfg: cfg,
-                    addr: addr,
-                  );
-                }
+                    addr: addr!,
+                    bill: b!,
+                  )
               : null,
           child: _placing
               ? const SizedBox(
