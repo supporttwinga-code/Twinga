@@ -7,6 +7,7 @@ import '../delivery/delivery_area.dart';
 import '../earnings/rider_earnings_screen.dart';
 import '../registration/register_rider_screen.dart';
 import '../support/support_screen.dart';
+import '../withdraw/withdraw_screen.dart';
 
 const Color _deep = Color(0xFF0A3FB5);
 const Color _line = Color(0xFFE3EAF7);
@@ -342,9 +343,7 @@ class _OnlineCard extends StatelessWidget {
           Switch(
             value: online,
             onChanged: onChanged,
-            activeThumbColor: Colors.white,
             activeTrackColor: const Color(0xFF28C76F),
-            inactiveThumbColor: Colors.white,
             inactiveTrackColor: Colors.white30,
           ),
         ],
@@ -735,6 +734,18 @@ class _RiderStatus extends StatelessWidget {
                                 colors: const [Color(0xFF3AA4FF), TwingaColors.blue],
                                 onTap: () =>
                                     _push(context, DeliveryHistoryScreen(uid: uid)),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _ActionTile(
+                                icon: Icons.savings_outlined,
+                                label: 'Withdraw',
+                                colors: const [Color(0xFF8E7CFF), Color(0xFF5B49E0)],
+                                onTap: () => _push(
+                                  context,
+                                  WithdrawScreen(uid: uid, role: 'rider'),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 10),
