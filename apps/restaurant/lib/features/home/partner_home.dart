@@ -8,6 +8,7 @@ import '../menu/menu_manager_screen.dart';
 import '../orders/restaurant_orders_screen.dart';
 import '../registration/register_restaurant_screen.dart';
 import '../support/support_screen.dart';
+import '../withdraw/withdraw_screen.dart';
 
 Widget _message(String text) {
   return Center(
@@ -531,6 +532,18 @@ class _ApprovedHome extends StatelessWidget {
                   Icons.account_balance_wallet_outlined,
                   'Earnings',
                   () => _open(context, EarningsScreen(uid: uid)),
+                ),
+                _action(
+                  context,
+                  Icons.savings_outlined,
+                  'Withdraw',
+                  () => _open(context, WithdrawScreen(uid: uid, role: 'restaurant')),
+                ),
+                _action(
+                  context,
+                  Icons.account_balance_outlined,
+                  'Payout account',
+                  () => _open(context, PayoutDetailsScreen(uid: uid, role: 'restaurant')),
                 ),
                 _action(
                   context,
