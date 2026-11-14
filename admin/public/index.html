@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Twinga Admin</title>
+<style>
+:root{--blue:#0077f7;--deep:#0a3fb5;--orange:#ff9a1f;--ink:#14213d;--bg:#f3f7fe;--card:#fff;--line:#e3eaf7;--muted:#5b6b88;--ok:#1e9e4a;--bad:#d93025;--soft:#f1f5fc;--shadow:0 6px 18px rgba(10,42,143,.08);color-scheme:light}
+:root[data-theme="dark"]{--bg:#0b1220;--card:#121c31;--line:#243352;--ink:#e6eefc;--muted:#93a4c4;--soft:#0f1830;--shadow:0 6px 18px rgba(0,0,0,.35);color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+.hide{display:none!important}
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,var(--deep),var(--blue) 60%,#3aa4ff)}
+.lbox{background:var(--card);border-radius:24px;padding:28px 22px;width:100%;max-width:380px;box-shadow:0 20px 50px rgba(10,42,143,.35)}
+.lbox h1{margin:0 0 4px;font-size:26px}.lbox p{margin:0 0 18px;color:var(--muted)}
+label{display:block;font-weight:600;font-size:13px;margin:12px 0 4px}
+input,select,textarea{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:12px;font-size:16px;background:var(--card)}
+.btn{border:0;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff;width:auto}
+.btn:disabled{opacity:.5;cursor:default}.btn.ok{background:var(--ok)}.btn.bad{background:var(--bad)}.btn.org{background:var(--orange)}
+.btn.ghost{background:var(--card);color:var(--blue);border:1px solid var(--line)}.btn.sm{padding:6px 11px;font-size:13px}
+.btn.full{width:100%;margin-top:18px;padding:14px}
+.err{color:var(--bad);margin-top:10px;font-size:13px;min-height:18px}
+header{background:linear-gradient(135deg,var(--deep),var(--blue) 70%,#3aa4ff);color:#fff;padding:12px 16px 0;position:sticky;top:0;z-index:30;box-shadow:0 6px 20px rgba(10,42,143,.25)}
+.top{display:flex;align-items:center;gap:8px;max-width:1280px;margin:0 auto}
+.logo{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#ffc15e,var(--orange));display:grid;place-items:center;font-weight:800}
+.top b{font-size:18px;white-space:nowrap}
+.sw{position:relative;flex:1;min-width:0}
+.sw input{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);color:#fff;padding:9px 12px;font-size:14px}
+.sw input::placeholder{color:rgba(255,255,255,.75)}
+.ib{background:rgba(255,255,255,.18);border:0;color:#fff;border-radius:10px;padding:8px 10px;cursor:pointer;font-size:13px;font-weight:700;white-space:nowrap}
+#sres{position:absolute;left:0;right:0;top:44px;background:var(--card);color:var(--ink);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.3);max-height:60vh;overflow:auto;z-index:40}
+#sres div{padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer}#sres small{color:var(--muted)}
+nav{display:flex;gap:2px;overflow-x:auto;max-width:1280px;margin:8px auto 0;scrollbar-width:none}nav::-webkit-scrollbar{display:none}
+nav button{background:none;border:0;color:rgba(255,255,255,.8);padding:10px 12px;font-weight:700;white-space:nowrap;border-bottom:3px solid transparent;cursor:pointer}
+nav button.on{color:#fff;border-bottom-color:var(--orange)}
+nav .dot{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;border-radius:9px;background:var(--orange);color:#fff;font-size:11px;text-align:center}
+main{max-width:1280px;margin:0 auto;padding:16px}
+h2{margin:4px 0 12px;font-size:20px}h3{margin:0;font-size:16px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:var(--shadow)}
+.stat small{color:var(--muted);display:block}.stat b{font-size:22px;display:block;margin-top:3px}.stat i{font-style:normal;font-size:12px;color:var(--muted)}
+.stat.alert b{color:var(--orange)}.stat.red b{color:var(--bad)}.stat.good b{color:var(--ok)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:7px 14px;font-weight:600;cursor:pointer}
+.chip.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.list{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.card.click{cursor:pointer}.card.warn{border-color:var(--orange);box-shadow:0 0 0 2px rgba(255,154,31,.25)}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.pill{border-radius:12px;padding:3px 10px;font-size:12px;font-weight:800;white-space:nowrap}
+.p-pending,.p-placed{background:#fff1dc;color:#b86a00}.p-approved,.p-paid,.p-delivered,.p-active{background:#e5f6ea;color:var(--ok)}
+.p-rejected,.p-cancelled,.p-inactive{background:#fde8e6;color:var(--bad)}.p-accepted,.p-preparing,.p-ready,.p-picked{background:#e3eeff;color:var(--blue)}
+.kv{margin:10px 0 0;display:grid;gap:4px;font-size:14px}.kv div{display:flex;gap:8px;justify-content:space-between}
+.kv span:first-child{color:var(--muted)}.kv span:last-child{text-align:right;word-break:break-word}
+.acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}.acts .btn{flex:1;min-width:110px}
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:20px;padding:30px;text-align:center;color:var(--muted)}
+a.map{color:var(--blue);font-weight:600;text-decoration:none}
+.copy{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:1px 8px;margin-left:6px;font-size:12px;cursor:pointer;color:var(--blue)}
+details summary{cursor:pointer;color:var(--blue);font-weight:600;margin-top:10px}
+.form{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}.form small{display:block;font-weight:400;color:var(--muted)}
+.note{background:#fff7e8;border:1px solid #ffe2b0;border-radius:14px;padding:12px;margin-bottom:14px;font-size:14px;color:#5a3b00}
+:root[data-theme="dark"] .note{background:#2a2110;border-color:#5a4313;color:#ffe2b0}
+.two{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-top:14px}
+.chart{width:100%;height:auto}.bar{height:8px;border-radius:6px;background:var(--soft);overflow:hidden;margin-top:4px}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),#3aa4ff)}
+.board{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));align-items:start}
+.col{background:var(--soft);border-radius:18px;padding:10px;min-height:100px}.col>h3{padding:4px 6px 10px}
+.col .card{margin-bottom:10px;padding:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--muted);font-size:12px;text-transform:uppercase}
+.tw{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+#modal{position:fixed;inset:0;background:rgba(10,20,40,.55);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+#mbox{background:var(--card);width:100%;max-width:720px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:18px}
+@media(min-width:760px){#modal{align-items:center}#mbox{border-radius:24px}}
+#mhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.tl{border-left:3px solid var(--line);margin:10px 0 0 8px;padding-left:14px;display:grid;gap:8px;font-size:14px}.tl b{display:block}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#14213d;color:#fff;padding:12px 18px;border-radius:14px;z-index:60;max-width:90vw;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.sub{color:var(--muted);font-size:13px;margin:-6px 0 12px}
+</style>
+</head>
+<body>
+<section id="login">
+  <form class="lbox" id="lform">
+    <h1>Twinga Admin</h1><p>Sign in with your admin account.</p>
+    <label for="em">Email</label><input id="em" type="email" autocomplete="username" required>
+    <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" required>
+    <button class="btn full" id="lbtn" type="submit">Sign in</button><div class="err" id="lerr"></div>
+  </form>
+</section>
+<section id="app" class="hide">
+  <header>
+    <div class="top">
+      <div class="logo">T</div><b>Admin</b>
+      <div class="sw"><input id="gs" placeholder="Search orders, restaurants, riders, customers" autocomplete="off"><div id="sres" class="hide"></div></div>
+      <button class="ib" id="snd" type="button" title="Alert sound">🔔</button>
+      <button class="ib" id="thm" type="button" title="Theme">◐</button>
+      <button class="ib" id="out" type="button">Log out</button>
+    </div>
+    <nav id="nav"></nav>
+  </header>
+  <main id="view"></main>
+</section>
+<div id="modal" class="hide"><div id="mbox"><div id="mhead"><h2 id="mtitle" style="margin:0"></h2><button class="btn ghost sm" data-act="close">Close</button></div><div id="mbody"></div></div></div>
+<div id="toast" class="hide"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, collection, doc, onSnapshot, updateDoc, setDoc, addDoc, deleteDoc, getDoc, getDocs, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { firebaseConfig } from "./config.js";
+
+const ADMIN_UID = "6EHDHFtlTBMrb43cgtu4FuEOLkg2";
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ---------- helpers ---------- */
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const num = (v) => (typeof v === "number" && isFinite(v) ? v : 0);
+const rs = (p) => { const w = Math.trunc(num(p) / 100), r = Math.abs(num(p) % 100); return "₹" + w.toLocaleString("en-IN") + (r ? "." + String(r).padStart(2, "0") : ""); };
+const ts = (t) => (t && typeof t.toDate === "function" ? t.toDate() : null);
+const dt = (t) => { const d = ts(t); return d ? d.toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) : ""; };
+const tm = (t) => { const d = ts(t); return d ? d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" }) : ""; };
+const short = (id) => String(id).slice(-5).toUpperCase();
+const ms = (t) => ts(t)?.getTime() || 0;
+const mins = (a) => (a < 0 || !isFinite(a) ? "" : a < 60000 ? Math.round(a / 1000) + "s" : Math.round(a / 60000) + " min");
+const LIVE = ["placed", "accepted", "preparing", "ready", "picked"];
+const store = { get: (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (_) { return d; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} } };
+
+let toastTimer;
+function toast(m) { const t = $("toast"); t.textContent = m; t.classList.remove("hide"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add("hide"), 3400); }
+
+function csv(rows) { return rows.map((r) => r.map((c) => { const s = String(c ?? ""); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(",")).join("\n"); }
+function download(name, rows) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv(rows)], { type: "text/csv" }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ---------- state ---------- */
+const data = { restaurants: [], riders: [], payouts: [], orders: [], users: [], banners: [], coupons: [], deposits: [], logs: [], pricing: null };
+const S = store.get("tw_state", { range: "7d", f: { restaurants: "pending", riders: "pending", payouts: "pending", orders: "all", customers: "all" }, q: {} });
+let tab = "dashboard";
+let unsubs = [];
+const loaded = new Set();
+let lastCounts = null;
+let sound = store.get("tw_sound", true);
+
+const byId = (arr) => Object.fromEntries(arr.map((x) => [x.id, x]));
+const pendingCount = (k) => ({ restaurants: data.restaurants.filter((x) => x.status === "pending").length, riders: data.riders.filter((x) => x.status === "pending").length, payouts: data.payouts.filter((x) => x.status === "pending").length }[k] || 0);
+const slaSec = () => num(data.pricing?.dispatchExpandAfterSec) || 120;
+const unassigned = (o) => ["accepted", "preparing", "ready"].includes(o.status) && !o.riderUid && Date.now() - (ms(o.acceptedAt) || ms(o.createdAt)) > slaSec() * 1000;
+
+const rangeStart = (r) => { const d = new Date(); d.setHours(0, 0, 0, 0); if (r === "today") return d; if (r === "7d") { d.setDate(d.getDate() - 6); return d; } if (r === "30d") { d.setDate(d.getDate() - 29); return d; } return null; };
+const inRange = (o, r) => { const s = rangeStart(r); if (!s) return true; const d = ts(o.createdAt); return !!d && d >= s; };
+const delivered = (arr) => arr.filter((o) => o.status === "delivered");
+const sum = (arr, k) => arr.reduce((s, o) => s + num(o[k]), 0);
+
+function agg(orders) {
+  const d = delivered(orders);
+  const done = orders.filter((o) => ["delivered", "cancelled", "rejected"].includes(o.status));
+  const bad = orders.filter((o) => ["cancelled", "rejected"].includes(o.status));
+  const acc = orders.filter((o) => ts(o.acceptedAt) && ts(o.createdAt)).map((o) => ms(o.acceptedAt) - ms(o.createdAt));
+  const del = d.filter((o) => ts(o.updatedAt) && ts(o.createdAt)).map((o) => ms(o.updatedAt) - ms(o.createdAt));
+  const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : -1);
+  return {
+    count: orders.length, delivered: d.length, bad: bad.length,
+    badPct: done.length ? Math.round((bad.length / done.length) * 100) : 0,
+    gmv: sum(d, "totalPaise"), food: sum(d, "foodSubtotalPaise"), commission: sum(d, "commissionPaise"),
+    platform: sum(d, "platformFeePaise"), delivery: sum(d, "deliveryPaise"), riderPay: sum(d, "riderPayPaise"),
+    gst: sum(d, "foodGstPaise") + sum(d, "gstOnFeesPaise"), packaging: sum(d, "packagingPaise"),
+    aov: d.length ? Math.round(sum(d, "totalPaise") / d.length) : 0,
+    avgAccept: avg(acc), avgDelivery: avg(del),
+  };
+}
+
+/* ---------- ui pieces ---------- */
+const pill = (s) => `<span class="pill p-${esc(s)}">${esc(s || "unknown")}</span>`;
+const kv = (a, b) => (b === "" || b == null ? "" : `<div><span>${esc(a)}</span><span>${b}</span></div>`);
+const empty = (t) => `<div class="empty">${esc(t)}</div>`;
+const copyBtn = (t) => (t ? `<button class="copy" data-copy="${esc(t)}" type="button">Copy</button>` : "");
+const mapLink = (lat, lng) => (typeof lat === "number" && typeof lng === "number" ? `<a class="map" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${lat},${lng}">${lat.toFixed(5)}, ${lng.toFixed(5)}</a>` : "");
+const stat = (label, value, cls = "", sub = "") => `<div class="stat ${cls}"><small>${label}</small><b>${value}</b>${sub ? `<i>${sub}</i>` : ""}</div>`;
+const chips = (group, opts, store_ = "f") => `<div class="chips">${opts.map(([v, l]) => `<button class="chip ${(store_ === "f" ? S.f[group] : S[group]) === v ? "on" : ""}" data-filter="${group}" data-v="${v}" data-st="${store_}">${l}</button>`).join("")}</div>`;
+const searchBox = (ph) => `<div class="chips"><input id="q" placeholder="${ph}" value="${esc(S.q[tab] || "")}" style="max-width:360px"></div>`;
+const rangeChips = () => chips("range", [["today", "Today"], ["7d", "7 days"], ["30d", "30 days"], ["all", "All time"]], "r");
+
+function barChart(vals, labels, fmt = (v) => v) {
+  const W = 340, H = 150, pad = 22, max = Math.max(1, ...vals), bw = (W - 10) / vals.length;
+  let s = `<svg viewBox="0 0 ${W} ${H}" class="chart" role="img">`;
+  vals.forEach((v, i) => {
+    const h = ((H - pad - 14) * v) / max, x = 5 + i * bw, y = H - pad - h;
+    s += `<rect x="${x + bw * 0.15}" y="${y}" width="${bw * 0.7}" height="${Math.max(h, 0)}" rx="3" fill="var(--blue)"/>`;
+    if (v > 0 && vals.length <= 14) s += `<text x="${x + bw / 2}" y="${y - 3}" text-anchor="middle" font-size="9" fill="var(--muted)">${fmt(v)}</text>`;
+    if (labels[i]) s += `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle" font-size="9" fill="var(--muted)">${labels[i]}</text>`;
+  });
+  return s + "</svg>";
+}
+function rankRows(rows, fmt) {
+  if (!rows.length) return empty("No data yet.");
+  const max = Math.max(1, ...rows.map((r) => r[1]));
+  return rows.map((r) => `<div style="margin-bottom:10px"><div class="row"><span>${esc(r[0])}</span><b>${fmt(r[1])}</b></div><div class="bar"><i style="width:${Math.round((r[1] / max) * 100)}%"></i></div></div>`).join("");
+}
+
+/* ---------- modal ---------- */
+function openModal(title, html) { $("mtitle").textContent = title; $("mbody").innerHTML = html; $("modal").classList.remove("hide"); $("mbox").scrollTop = 0; }
+function closeModal() { $("modal").classList.add("hide"); $("mbody").innerHTML = ""; }
+
+/* ---------- audit log ---------- */
+async function log(action, target, detail = "") { try { await addDoc(collection(db, "adminLogs"), { action, target, detail, at: serverTimestamp() }); } catch (_) {} }
+
+/* ---------- views ---------- */
+function viewDashboard() {
+  const orders = data.orders.filter((o) => inRange(o, S.range));
+  const a = agg(orders);
+  const live = data.orders.filter((o) => LIVE.includes(o.status));
+  const un = data.orders.filter(unassigned);
+  const online = data.riders.filter((r) => r.status === "approved" && r.isOnline).length;
+  const net = a.commission + a.platform + a.delivery - a.riderPay;
+  // charts
+  let vals = [], labels = [], sales = [];
+  if (S.range === "today") {
+    vals = Array(24).fill(0); sales = Array(24).fill(0);
+    orders.forEach((o) => { const d = ts(o.createdAt); if (d) { vals[d.getHours()]++; if (o.status === "delivered") sales[d.getHours()] += num(o.totalPaise); } });
+    labels = vals.map((_, i) => (i % 3 === 0 ? i + "h" : ""));
+  } else {
+    const n = S.range === "7d" ? 7 : 30; vals = Array(n).fill(0); sales = Array(n).fill(0);
+    const start = new Date(); start.setHours(0, 0, 0, 0); start.setDate(start.getDate() - (n - 1));
+    data.orders.forEach((o) => { const d = ts(o.createdAt); if (!d) return; const i = Math.floor((d - start) / 86400000); if (i >= 0 && i < n) { vals[i]++; if (o.status === "delivered") sales[i] += num(o.totalPaise); } });
+    labels = vals.map((_, i) => { const d = new Date(start); d.setDate(d.getDate() + i); return n === 7 || i % 5 === 0 ? d.getDate() + "/" + (d.getMonth() + 1) : ""; });
+  }
+  const hours = Array(24).fill(0); orders.forEach((o) => { const d = ts(o.createdAt); if (d) hours[d.getHours()]++; });
+  const statusMix = ["placed", "accepted", "preparing", "ready", "picked", "delivered", "cancelled", "rejected"].map((s) => [s, orders.filter((o) => o.status === s).length]).filter((x) => x[1] > 0);
+  const rmap = byId(data.restaurants);
+  const topRest = Object.entries(delivered(orders).reduce((m, o) => ((m[o.restaurantId] = (m[o.restaurantId] || 0) + num(o.foodSubtotalPaise)), m), {})).map(([id, v]) => [rmap[id]?.name || id, v]).sort((x, y) => y[1] - x[1]).slice(0, 5);
+  const topRider = Object.entries(delivered(orders).reduce((m, o) => { if (o.riderUid) m[o.riderUid] = (m[o.riderUid] || 0) + 1; return m; }, {})).map(([id, v]) => [data.riders.find((r) => r.id === id)?.name || id, v]).sort((x, y) => y[1] - x[1]).slice(0, 5);
+  return `<h2>Dashboard</h2>${rangeChips()}
+    <div class="grid">
+      ${stat("Restaurants to approve", pendingCount("restaurants"), pendingCount("restaurants") ? "alert" : "")}
+      ${stat("Riders to approve", pendingCount("riders"), pendingCount("riders") ? "alert" : "")}
+      ${stat("Withdrawals to pay", pendingCount("payouts"), pendingCount("payouts") ? "alert" : "")}
+      ${stat("Live orders now", live.length)}
+      ${stat("Riders online", online, online ? "good" : "")}
+      ${stat("Orders without rider", un.length, un.length ? "red" : "", "waiting over " + Math.round(slaSec() / 60) + " min")}
+    </div>
+    <h2 style="margin-top:22px">Performance</h2>
+    <div class="grid">
+      ${stat("Orders", a.count)}${stat("Delivered", a.delivered)}
+      ${stat("Cancelled / rejected", a.bad, a.badPct > 20 ? "red" : "", a.badPct + "% of finished")}
+      ${stat("Customer paid (GMV)", rs(a.gmv))}${stat("Average order", rs(a.aov))}
+      ${stat("Food sales", rs(a.food))}${stat("Commission", rs(a.commission))}
+      ${stat("Platform fees", rs(a.platform))}${stat("Delivery fees", rs(a.delivery))}
+      ${stat("Rider pay", rs(a.riderPay))}${stat("GST collected", rs(a.gst))}
+      ${stat("Twinga net", rs(net), net >= 0 ? "good" : "red", "commission + fees + delivery − rider pay")}
+      ${stat("Avg time to accept", mins(a.avgAccept) || "—")}${stat("Avg delivery time", mins(a.avgDelivery) || "—")}
+      ${stat("Customers", data.users.filter((u) => u.role === "customer").length)}
+      ${stat("Approved restaurants", data.restaurants.filter((r) => r.status === "approved").length)}
+    </div>
+    <div class="two">
+      <div class="card"><h3>Orders ${S.range === "today" ? "by hour" : "per day"}</h3>${barChart(vals, labels)}</div>
+      <div class="card"><h3>Customer paid (delivered)</h3>${barChart(sales.map((p) => Math.round(p / 100)), labels, (v) => "₹" + v)}</div>
+      <div class="card"><h3>Peak hours</h3>${barChart(hours, hours.map((_, i) => (i % 3 === 0 ? i + "h" : "")))}</div>
+      <div class="card"><h3>Order status mix</h3>${rankRows(statusMix, (v) => v)}</div>
+      <div class="card"><h3>Top restaurants (food sales)</h3>${rankRows(topRest, rs)}</div>
+      <div class="card"><h3>Top riders (trips)</h3>${rankRows(topRider, (v) => v)}</div>
+    </div>`;
+}
+
+function orderCard(o, board) {
+  const age = Date.now() - ms(o.createdAt), un = unassigned(o);
+  return `<div class="card click ${un ? "warn" : ""}" data-open="order:${esc(o.id)}">
+    <div class="row"><h3>#${esc(short(o.id))}</h3>${pill(o.status)}</div>
+    <div class="kv">${kv("Restaurant", esc(o.restaurantName))}${kv("Customer", esc(o.customerName))}
+    ${kv("Rider", o.riderName ? esc(o.riderName) : LIVE.includes(o.status) && o.status !== "placed" ? `<b style="color:var(--bad)">No rider</b>` : "")}
+    ${kv("Total (COD)", rs(o.totalPaise))}${kv(board ? "Waiting" : "Placed", board ? mins(age) : dt(o.createdAt))}</div>
+    ${un && board ? `<div class="acts"><button class="btn org sm" data-act="assignopen" data-id="${esc(o.id)}">Assign rider</button></div>` : ""}</div>`;
+}
+
+function viewLive() {
+  const cols = [["New", ["placed"]], ["Kitchen", ["accepted", "preparing"]], ["Ready", ["ready"]], ["On the way", ["picked"]]];
+  const html = cols.map(([t, st]) => { const rows = data.orders.filter((o) => st.includes(o.status)).sort((a, b) => ms(a.createdAt) - ms(b.createdAt)); return `<div class="col"><h3>${t} · ${rows.length}</h3>${rows.map((o) => orderCard(o, true)).join("") || `<div class="sub">Nothing here.</div>`}</div>`; }).join("");
+  return `<h2>Live orders</h2><div class="sub">Updates by itself. Orange border = no rider after ${Math.round(slaSec() / 60)} min, assign one by hand.</div><div class="board">${html}</div>`;
+}
+
+function ordersFiltered() {
+  const q = (S.q.orders || "").toLowerCase(), f = S.f.orders;
+  return data.orders.filter((o) => (f === "all" ? true : f === "live" ? LIVE.includes(o.status) : o.status === f) && inRange(o, S.range) &&
+    (!q || [o.id, short(o.id), o.customerName, o.restaurantName, o.riderName].some((x) => String(x || "").toLowerCase().includes(q))))
+    .sort((a, b) => ms(b.createdAt) - ms(a.createdAt));
+}
+function ordersResults() { const rows = ordersFiltered(); return rows.length ? `<div class="sub">${rows.length} orders${rows.length > 120 ? ", showing the latest 120" : ""}</div><div class="list">${rows.slice(0, 120).map((o) => orderCard(o, false)).join("")}</div>` : empty("No orders match."); }
+function viewOrders() { return `<h2>Orders</h2>${rangeChips()}${chips("orders", [["all", "All"], ["live", "Live"], ["delivered", "Delivered"], ["cancelled", "Cancelled"], ["rejected", "Rejected"]])}${searchBox("Search order no, customer, restaurant, rider")}<div class="acts" style="margin:0 0 12px"><button class="btn ghost sm" data-act="csv" data-id="orders">Export CSV</button></div><div id="results">${ordersResults()}</div>`; }
+
+function restStats(id) { return agg(data.orders.filter((o) => o.restaurantId === id)); }
+function restResults() {
+  const q = (S.q.restaurants || "").toLowerCase(), f = S.f.restaurants;
+  const rows = data.restaurants.filter((r) => (f === "all" || r.status === f) && (!q || [r.name, r.phone, r.cuisines, r.addressLine].some((x) => String(x || "").toLowerCase().includes(q))));
+  return rows.length ? `<div class="list">${rows.map((r) => { const s = restStats(r.id); return `<div class="card click" data-open="rest:${esc(r.id)}"><div class="row"><h3>${esc(r.name)}</h3>${pill(r.status)}</div><div class="kv">${kv("Cuisines", esc(r.cuisines))}${kv("Phone", esc(r.phone))}${kv("Open now", r.status === "approved" ? (r.isOpen ? "Yes" : "No") : "")}${kv("Orders / delivered", s.count + " / " + s.delivered)}${kv("Food sales", rs(s.food))}</div></div>`; }).join("")}</div>` : empty("No restaurants in this list.");
+}
+function viewRestaurants() { return `<h2>Restaurants</h2>${chips("restaurants", [["pending", "Pending"], ["approved", "Approved"], ["rejected", "Rejected"], ["all", "All"]])}${searchBox("Search name, phone, cuisine, area")}<div class="acts" style="margin:0 0 12px"><button class="btn ghost sm" data-act="csv" data-id="restaurants">Export CSV</button></div><div id="results">${restResults()}</div>`; }
+
+function riderStats(id) { const o = data.orders.filter((x) => x.riderUid === id), d = delivered(o); return { trips: d.length, earned: sum(d, "riderPayPaise"), cash: sum(d, "totalPaise"), active: o.filter((x) => LIVE.includes(x.status)).length }; }
+function riderResults() {
+  const q = (S.q.riders || "").toLowerCase(), f = S.f.riders;
+  const rows = data.riders.filter((r) => (f === "all" || r.status === f) && (!q || [r.name, r.phone, r.vehicleNumber, r.city].some((x) => String(x || "").toLowerCase().includes(q))));
+  return rows.length ? `<div class="list">${rows.map((r) => { const s = riderStats(r.id); return `<div class="card click" data-open="rider:${esc(r.id)}"><div class="row"><h3>${esc(r.name)}</h3>${pill(r.status)}</div><div class="kv">${kv("Phone", esc(r.phone))}${kv("Vehicle", esc((r.vehicleType || "") + " " + (r.vehicleNumber || "")))}${kv("Online now", r.status === "approved" ? (r.isOnline ? "🟢 Yes" : "No") : "")}${kv("Trips", s.trips)}${kv("Earned", rs(s.earned))}</div></div>`; }).join("")}</div>` : empty("No riders in this list.");
+}
+function viewRiders() { return `<h2>Delivery partners</h2>${chips("riders", [["pending", "Pending"], ["approved", "Approved"], ["rejected", "Rejected"], ["all", "All"]])}${searchBox("Search name, phone, vehicle, city")}<div class="acts" style="margin:0 0 12px"><button class="btn ghost sm" data-act="csv" data-id="riders">Export CSV</button></div><div id="results">${riderResults()}</div>`; }
+
+function custStats(uid) { const o = data.orders.filter((x) => x.customerUid === uid), d = delivered(o); return { count: o.length, spent: sum(d, "totalPaise"), last: o.reduce((m, x) => Math.max(m, ms(x.createdAt)), 0) }; }
+function custResults() {
+  const q = (S.q.customers || "").toLowerCase(), f = S.f.customers;
+  const rows = data.users.filter((u) => u.role === "customer").map((u) => ({ u, s: custStats(u.id) })).filter(({ u, s }) => (f === "all" || (f === "ordered" ? s.count > 0 : s.count === 0)) && (!q || [u.name, u.email, u.phone].some((x) => String(x || "").toLowerCase().includes(q)))).sort((a, b) => b.s.last - a.s.last);
+  return rows.length ? `<div class="sub">${rows.length} customers</div><div class="list">${rows.slice(0, 150).map(({ u, s }) => `<div class="card click" data-open="cust:${esc(u.id)}"><div class="row"><h3>${esc(u.name || "Customer")}</h3></div><div class="kv">${kv("Email", esc(u.email))}${kv("Joined", dt(u.createdAt))}${kv("Orders", s.count)}${kv("Spent", rs(s.spent))}${kv("Last order", s.last ? dt({ toDate: () => new Date(s.last) }) : "")}</div></div>`).join("")}</div>` : empty("No customers yet.");
+}
+function viewCustomers() { return `<h2>Customers</h2>${chips("customers", [["all", "All"], ["ordered", "Ordered"], ["never", "Never ordered"]])}${searchBox("Search name or email")}<div class="acts" style="margin:0 0 12px"><button class="btn ghost sm" data-act="csv" data-id="customers">Export CSV</button></div><div id="results">${custResults()}</div>`; }
+
+function ownerName(p) { return (p.role === "rider" ? data.riders : data.restaurants).find((r) => r.id === p.uid)?.name || ""; }
+function payoutsResults() {
+  const q = (S.q.payouts || "").toLowerCase(), f = S.f.payouts;
+  const rows = data.payouts.filter((p) => (f === "all" || p.status === f) && (!q || [ownerName(p), p.holderName, p.upiId, p.accountNumber, p.utr].some((x) => String(x || "").toLowerCase().includes(q)))).sort((a, b) => ms(b.createdAt) - ms(a.createdAt));
+  return rows.length ? `<div class="list">${rows.map((p) => {
+    const bank = p.method === "bank";
+    const det = bank ? kv("Bank", esc(p.bankName)) + kv("Account no.", esc(p.accountNumber) + copyBtn(p.accountNumber)) + kv("IFSC", esc(p.ifsc) + copyBtn(p.ifsc)) : kv("UPI ID", esc(p.upiId) + copyBtn(p.upiId));
+    const acts = p.status === "pending" ? `<input id="note-${esc(p.id)}" placeholder="UTR / reference (or reason if rejecting)"><button class="btn ok" data-act="paid" data-id="${esc(p.id)}" data-confirm="1">Mark paid</button><button class="btn bad" data-act="payrej" data-id="${esc(p.id)}" data-confirm="1">Reject</button>` : "";
+    return `<div class="card"><div class="row"><h3>${rs(p.amountPaise)}</h3>${pill(p.status)}</div><div class="kv">${kv("For", esc(ownerName(p) || p.uid) + " (" + (p.role === "rider" ? "Rider" : "Restaurant") + ")")}${kv("Account holder", esc(p.holderName) + copyBtn(p.holderName))}${kv("Method", bank ? "Bank transfer" : "UPI")}${det}${kv("Requested", dt(p.createdAt))}${kv("Paid on", dt(p.paidAt))}${kv("Reference", esc(p.utr))}${kv("Reason", esc(p.note))}</div><div class="acts">${acts}</div></div>`;
+  }).join("")}</div>` : empty("No withdrawal requests in this list.");
+}
+function viewPayouts() {
+  const P = data.payouts, tot = (st, role) => P.filter((p) => p.status === st && (!role || p.role === role)).reduce((s, p) => s + num(p.amountPaise), 0);
+  return `<h2>Withdrawals</h2><div class="grid" style="margin-bottom:14px">${stat("Pending total", rs(tot("pending")), "alert")}${stat("Pending: restaurants", rs(tot("pending", "restaurant")))}${stat("Pending: riders", rs(tot("pending", "rider")))}${stat("Paid so far", rs(tot("paid")), "good")}</div>
+  <div class="note">Pay each request from your bank or UPI app, type the UTR below, then tap Mark paid twice. The user sees Paid in the app.</div>
+  ${chips("payouts", [["pending", "Pending"], ["paid", "Paid"], ["rejected", "Rejected"], ["all", "All"]])}${searchBox("Search name, UPI, account, UTR")}<div class="acts" style="margin:0 0 12px"><button class="btn ghost sm" data-act="csv" data-id="payouts">Export CSV</button></div><div id="results">${payoutsResults()}</div>`;
+}
+
+function settlements() {
+  const paid = (uid, st) => data.payouts.filter((p) => p.uid === uid && st.includes(p.status)).reduce((s, p) => s + num(p.amountPaise), 0);
+  const rest = data.restaurants.filter((r) => r.status === "approved").map((r) => { const d = delivered(data.orders.filter((o) => o.restaurantId === r.id)); const earned = sum(d, "foodSubtotalPaise") - sum(d, "commissionPaise"); return { r, n: d.length, food: sum(d, "foodSubtotalPaise"), com: sum(d, "commissionPaise"), earned, paid: paid(r.id, ["paid"]), pend: paid(r.id, ["pending"]), avail: Math.max(0, earned - paid(r.id, ["paid", "pending"])) }; });
+  const rid = data.riders.filter((r) => r.status === "approved").map((r) => { const s = riderStats(r.id); const dep = data.deposits.filter((d) => d.riderUid === r.id).reduce((a, d) => a + num(d.amountPaise), 0); return { r, s, paid: paid(r.id, ["paid"]), pend: paid(r.id, ["pending"]), avail: Math.max(0, s.earned - paid(r.id, ["paid", "pending"])), dep, owe: s.cash - dep }; });
+  return { rest, rid };
+}
+function viewFinance() {
+  const { rest, rid } = settlements();
+  const rt = rest.map((x) => `<tr><td>${esc(x.r.name)}</td><td>${x.n}</td><td>${rs(x.food)}</td><td>${rs(x.com)}</td><td>${rs(x.earned)}</td><td>${rs(x.paid)}</td><td>${rs(x.pend)}</td><td><b>${rs(x.avail)}</b></td></tr>`).join("");
+  const dt_ = rid.map((x) => `<tr><td>${esc(x.r.name)}</td><td>${x.s.trips}</td><td>${rs(x.s.earned)}</td><td>${rs(x.paid)}</td><td>${rs(x.avail)}</td><td>${rs(x.s.cash)}</td><td>${rs(x.dep)}</td><td><b style="color:${x.owe > 0 ? "var(--bad)" : "var(--ok)"}">${rs(x.owe)}</b></td><td><button class="btn sm" data-act="depopen" data-id="${esc(x.r.id)}">Record deposit</button></td></tr>`).join("");
+  return `<h2>Finance and settlements</h2><div class="sub">Balances come only from delivered orders and recorded payouts. Rider cash to deposit = cash collected − deposits you recorded.</div>
+  <div class="acts" style="margin:0 0 12px"><button class="btn ghost sm" data-act="csv" data-id="settle-rest">Export restaurants</button><button class="btn ghost sm" data-act="csv" data-id="settle-rider">Export riders</button></div>
+  <h3 style="margin:10px 0">Restaurants</h3>${rt ? `<div class="tw"><table><tr><th>Restaurant</th><th>Orders</th><th>Food sales</th><th>Commission</th><th>Earned</th><th>Paid</th><th>Pending</th><th>Available</th></tr>${rt}</table></div>` : empty("No approved restaurants yet.")}
+  <h3 style="margin:18px 0 10px">Riders</h3>${dt_ ? `<div class="tw"><table><tr><th>Rider</th><th>Trips</th><th>Earned</th><th>Paid out</th><th>Available</th><th>Cash collected</th><th>Deposited</th><th>To deposit</th><th></th></tr>${dt_}</table></div>` : empty("No approved riders yet.")}`;
+}
+
+const BANNER_F = [["title", "Title", "text"], ["subtitle", "Subtitle", "text"], ["imageUrl", "Image link (https)", "text"], ["sortOrder", "Show order (1 = first)", "number"], ["active", "Show to customers", "check"]];
+const COUPON_F = [["code", "Code (capital letters)", "text"], ["description", "Description", "text"], ["type", "Type", "select:percent|flat"], ["value", "Value (percent, or rupees for flat)", "number"], ["minOrder", "Minimum order (rupees)", "number"], ["maxDiscount", "Maximum discount (rupees)", "number"], ["usageLimit", "Total uses allowed (0 = unlimited)", "number"], ["expires", "Last valid date", "date"], ["active", "Active", "check"]];
+function viewMarketing() {
+  const b = [...data.banners].sort((x, y) => num(x.sortOrder) - num(y.sortOrder)), c = [...data.coupons].sort((x, y) => ms(y.createdAt) - ms(x.createdAt));
+  return `<h2>Banners and coupons</h2><div class="note">You can create and manage these now. The customer app will show banners and apply coupons in the next phase.</div>
+  <div class="row" style="margin-bottom:10px"><h3>Banners</h3><button class="btn sm" data-open="banner:new">Add banner</button></div>
+  ${b.length ? `<div class="list">${b.map((x) => `<div class="card click" data-open="banner:${esc(x.id)}"><div class="row"><h3>${esc(x.title)}</h3>${pill(x.active ? "active" : "inactive")}</div><div class="kv">${kv("Subtitle", esc(x.subtitle))}${kv("Order", num(x.sortOrder))}</div></div>`).join("")}</div>` : empty("No banners yet.")}
+  <div class="row" style="margin:22px 0 10px"><h3>Coupons</h3><button class="btn sm" data-open="coupon:new">Add coupon</button></div>
+  ${c.length ? `<div class="list">${c.map((x) => `<div class="card click" data-open="coupon:${esc(x.id)}"><div class="row"><h3>${esc(x.code)}</h3>${pill(x.active ? "active" : "inactive")}</div><div class="kv">${kv("Offer", x.type === "flat" ? "₹" + num(x.value) + " off" : num(x.value) + "% off")}${kv("Minimum order", num(x.minOrderPaise) ? rs(x.minOrderPaise) : "")}${kv("Valid till", dt(x.expiresAt))}${kv("Used", num(x.usedCount) + (num(x.usageLimit) ? " / " + x.usageLimit : ""))}</div></div>`).join("")}</div>` : empty("No coupons yet.")}`;
+}
+
+const PRICING_GROUPS = [
+  ["Fees and taxes", [["commissionPct", "Commission on food", "percent"], ["foodGstPct", "GST on food and packaging", "percent"], ["gstFeesPct", "GST on fees", "percent"], ["platformFeePaise", "Platform fee", "paise (1000 = ₹10)"]]],
+  ["Customer delivery charge", [["deliveryBaseKm", "Base distance", "km"], ["deliveryBasePaise", "Charge up to base km", "paise"], ["deliveryExtraPerKmPaise", "Charge per extra km", "paise"]]],
+  ["Rider pay", [["riderMinKm", "Minimum distance paid", "km"], ["riderBaseKm", "Base distance", "km"], ["riderBasePerKmPaise", "Pay per km up to base", "paise"], ["riderExtraPerKmPaise", "Pay per extra km", "paise"]]],
+  ["Rider search", [["dispatchRadiusKm", "Search radius", "km"], ["dispatchExpandedRadiusKm", "Radius after waiting", "km"], ["dispatchExpandAfterSec", "Widen search after", "seconds"]]],
+];
+function simulate(p, food, pack, km) {
+  const P = (k) => num(p[k]), foodP = Math.round(food * 100), packP = Math.round(pack * 100);
+  const gstFood = Math.round(((foodP + packP) * P("foodGstPct")) / 100);
+  const delivery = P("deliveryBasePaise") + Math.round(Math.max(0, km - P("deliveryBaseKm")) * P("deliveryExtraPerKmPaise"));
+  const fees = delivery + P("platformFeePaise"), gstFees = Math.round((fees * P("gstFeesPct")) / 100);
+  const total = Math.round((foodP + packP + gstFood + fees + gstFees) / 100) * 100;
+  const commission = Math.round((foodP * P("commissionPct")) / 100), rk = Math.max(P("riderMinKm"), km);
+  const rider = Math.round(Math.min(rk, P("riderBaseKm")) * P("riderBasePerKmPaise") + Math.max(0, rk - P("riderBaseKm")) * P("riderExtraPerKmPaise"));
+  return { foodP, packP, gstFood, delivery, platform: P("platformFeePaise"), gstFees, total, commission, rider, restaurant: foodP - commission, net: commission + delivery + P("platformFeePaise") - rider };
+}
+function simHtml() {
+  const p = data.pricing; if (!p) return "";
+  const f = Number($("sim-f")?.value || 400), k = Number($("sim-p")?.value || 20), d = Number($("sim-d")?.value || 3), s = simulate(p, f, k, d);
+  return `<div class="kv">${kv("Food", rs(s.foodP))}${kv("Packaging", rs(s.packP))}${kv("GST on food", rs(s.gstFood))}${kv("Delivery", rs(s.delivery))}${kv("Platform fee", rs(s.platform))}${kv("GST on fees", rs(s.gstFees))}<div><span><b>Customer pays</b></span><span><b>${rs(s.total)}</b></span></div>${kv("Restaurant gets", rs(s.restaurant))}${kv("Rider gets", rs(s.rider))}${kv("Twinga keeps", rs(s.net))}</div>`;
+}
+function viewPricing() {
+  const p = data.pricing; if (!p) return `<h2>Pricing</h2>${empty("config/pricing document not found in Firestore.")}`;
+  const g = PRICING_GROUPS.map(([t, fs]) => `<h3 style="margin:16px 0 8px">${t}</h3><div class="form">${fs.map(([k, l, u]) => `<label>${l}<small>${u}</small><input data-price="${k}" inputmode="decimal" value="${esc(p[k] ?? "")}"></label>`).join("")}</div>`).join("");
+  return `<h2>Pricing</h2><div class="note">Changes apply to every new order straight away. Orders already placed keep their old bill.</div>
+  <div class="two"><div class="card"><h3>Bill simulator</h3><div class="sub">Try a sample order. The apps may round slightly differently.</div>
+  <div class="form"><label>Food (₹)<input id="sim-f" inputmode="decimal" value="400"></label><label>Packaging (₹)<input id="sim-p" inputmode="decimal" value="20"></label><label>Distance (km)<input id="sim-d" inputmode="decimal" value="3"></label></div><div id="sim-out" style="margin-top:12px">${simHtml()}</div></div></div>
+  ${g}<div class="acts"><button class="btn" data-act="saveprice" data-confirm="1">Save pricing</button></div>`;
+}
+
+function viewActivity() {
+  const rows = [...data.logs].sort((a, b) => ms(b.at) - ms(a.at)).slice(0, 200);
+  return `<h2>Activity log</h2><div class="sub">Every action you take in this panel.</div>${rows.length ? `<div class="tw"><table><tr><th>When</th><th>Action</th><th>On</th><th>Detail</th></tr>${rows.map((l) => `<tr><td>${dt(l.at)}</td><td>${esc(l.action)}</td><td>${esc(l.target)}</td><td>${esc(l.detail)}</td></tr>`).join("")}</table></div>` : empty("No actions logged yet.")}`;
+}
+
+const TABS = [["dashboard", "Dashboard", viewDashboard], ["live", "Live", viewLive], ["orders", "Orders", viewOrders], ["restaurants", "Restaurants", viewRestaurants], ["riders", "Riders", viewRiders], ["customers", "Customers", viewCustomers], ["payouts", "Withdrawals", viewPayouts], ["finance", "Finance", viewFinance], ["marketing", "Marketing", viewMarketing], ["pricing", "Pricing", viewPricing], ["activity", "Activity", viewActivity]];
+const RESULTS = { orders: ordersResults, restaurants: restResults, riders: riderResults, customers: custResults, payouts: payoutsResults };
+
+function badge(k) { return k === "live" ? data.orders.filter(unassigned).length : k === "orders" ? data.orders.filter((o) => o.status === "placed").length : pendingCount(k); }
+function render() {
+  $("nav").innerHTML = TABS.map(([k, l]) => { const n = badge(k); return `<button data-tab="${k}" class="${tab === k ? "on" : ""}">${l}${n ? `<span class="dot">${n}</span>` : ""}</button>`; }).join("");
+  const total = pendingCount("restaurants") + pendingCount("riders") + pendingCount("payouts") + data.orders.filter((o) => o.status === "placed").length;
+  document.title = (total ? `(${total}) ` : "") + "Twinga Admin";
+  const a = document.activeElement;
+  if (a && $("view").contains(a) && ["INPUT", "SELECT", "TEXTAREA"].includes(a.tagName)) { if (a.id === "q" && RESULTS[tab]) $("results").innerHTML = RESULTS[tab](); return; }
+  const view = TABS.find((t) => t[0] === tab)[2];
+  const y = window.scrollY; $("view").innerHTML = view(); window.scrollTo(0, y);
+}
+
+/* ---------- detail modals ---------- */
+function form(fields, v = {}) {
+  return `<div class="form">${fields.map(([k, l, t]) => {
+    const val = v[k];
+    if (t === "check") return `<label><input type="checkbox" id="f-${k}" style="width:auto" ${val ? "checked" : ""}> ${l}</label>`;
+    if (t.startsWith("select:")) return `<label>${l}<select id="f-${k}">${t.slice(7).split("|").map((o) => `<option ${val === o ? "selected" : ""}>${o}</option>`).join("")}</select></label>`;
+    return `<label>${l}<input id="f-${k}" type="${t === "number" ? "text" : t}" ${t === "number" ? 'inputmode="decimal"' : ""} value="${esc(val ?? "")}"></label>`;
+  }).join("")}</div>`;
+}
+const readForm = (fields) => Object.fromEntries(fields.map(([k, , t]) => { const el = $("f-" + k); return [k, t === "check" ? el.checked : t === "number" ? Number(el.value || 0) : el.value.trim()]; }));
+
+function openOrder(id) {
+  const o = data.orders.find((x) => x.id === id); if (!o) return;
+  const items = (Array.isArray(o.items) ? o.items : []).map((i) => { const q = i.qty || i.quantity || 1, pr = num(i.pricePaise ?? i.unitPricePaise) * q; return `<div><span>${esc(q)} × ${esc(i.name || i.title || "Item")}</span><span>${pr ? rs(pr) : ""}</span></div>`; }).join("");
+  const tl = [["Order placed", o.createdAt], ["Restaurant accepted", o.acceptedAt], ["Last update (" + o.status + ")", o.updatedAt]].filter((x) => ts(x[1])).map((x) => `<div><b>${x[0]}</b>${dt(x[1])}</div>`).join("");
+  const rest = data.restaurants.find((r) => r.id === o.restaurantId);
+  const canAssign = ["accepted", "preparing", "ready"].includes(o.status);
+  openModal("Order #" + short(id), `<div class="row">${pill(o.status)}<b>${rs(o.totalPaise)} · Cash on delivery</b></div>
+  <div class="kv">${kv("Restaurant", esc(o.restaurantName) + (rest?.phone ? " · " + esc(rest.phone) + copyBtn(rest.phone) : ""))}${kv("Customer", esc(o.customerName))}${kv("Rider", o.riderName ? esc(o.riderName) + " · " + esc(o.riderPhone || "") + copyBtn(o.riderPhone) : "Not assigned")}${kv("Distance", num(o.distanceMeters) ? (num(o.distanceMeters) / 1000).toFixed(1) + " km" : "")}<div><span>Drop address</span><span id="o-drop">Loading...</span></div><div><span>Delivery OTP</span><span id="o-otp"><button class="copy" data-act="showotp" data-id="${esc(id)}">Show OTP</button></span></div></div>
+  <div class="tl">${tl}</div><h3 style="margin-top:14px">Items</h3><div class="kv">${items}</div>
+  <h3 style="margin-top:14px">Bill</h3><div class="kv">${kv("Food subtotal", rs(o.foodSubtotalPaise))}${kv("Packaging", rs(o.packagingPaise))}${kv("GST on food", rs(o.foodGstPaise))}${kv("Delivery", rs(o.deliveryPaise))}${kv("Platform fee", rs(o.platformFeePaise))}${kv("GST on fees", rs(o.gstOnFeesPaise))}${kv("Round off", rs(o.roundOffPaise))}${kv("Commission", rs(o.commissionPaise))}${kv("Rider pay", rs(o.riderPayPaise))}${kv("Cancel reason", esc(o.cancelReason))}</div>
+  <div class="acts">${canAssign ? `<button class="btn org" data-act="assignopen" data-id="${esc(id)}">${o.riderUid ? "Reassign rider" : "Assign rider"}</button>` : ""}${LIVE.includes(o.status) ? `<button class="btn bad" data-act="cancelorder" data-id="${esc(id)}" data-confirm="1">Cancel order</button>` : ""}</div>`);
+  getDoc(doc(db, "orders", id, "secrets", "drop")).then((s) => { const d = s.data(); if ($("o-drop")) $("o-drop").textContent = d ? [d.label, d.addressLine, d.landmark && "Landmark: " + d.landmark].filter(Boolean).join(", ") : "Not available"; }).catch(() => { if ($("o-drop")) $("o-drop").textContent = "Not available"; });
+}
+
+function openRest(id) {
+  const r = data.restaurants.find((x) => x.id === id); if (!r) return;
+  const s = restStats(id);
+  openModal(r.name, `<div class="row">${pill(r.status)}${r.status === "approved" ? `<button class="btn sm ${r.isOpen ? "bad" : "ok"}" data-act="rtoggle" data-id="${esc(id)}">${r.isOpen ? "Force close" : "Open now"}</button>` : ""}</div>
+  <div class="kv">${kv("Cuisines", esc(r.cuisines))}${kv("Phone", esc(r.phone) + copyBtn(r.phone))}${kv("FSSAI", esc(r.fssai) + copyBtn(r.fssai))}${kv("Address", esc(r.addressLine))}${kv("Map location", mapLink(r.lat, r.lng))}${kv("Registered", dt(r.createdAt))}${kv("Rating", r.rating ? num(r.rating).toFixed(1) : "")}${kv("Reject reason", esc(r.rejectReason))}</div>
+  <h3 style="margin-top:14px">Performance</h3><div class="grid" style="margin-top:8px">${stat("Orders", s.count)}${stat("Delivered", s.delivered)}${stat("Food sales", rs(s.food))}${stat("Commission", rs(s.commission))}${stat("Cancelled %", s.badPct + "%")}${stat("Avg accept time", mins(s.avgAccept) || "—")}</div>
+  <h3 style="margin-top:14px">Settings</h3><div class="form"><label>Delivery radius (km)<input id="e-rad" inputmode="decimal" value="${num(r.deliveryRadiusKm)}"></label><label>Packaging (₹)<input id="e-pack" inputmode="decimal" value="${num(r.packagingChargePaise) / 100}"></label><label>Prep time (min)<input id="e-prep" inputmode="decimal" value="${num(r.prepTimeMin)}"></label></div>
+  <div class="acts"><button class="btn" data-act="rsave" data-id="${esc(id)}">Save settings</button></div>
+  <h3 style="margin-top:14px">Menu</h3><div id="r-menu" class="kv">Loading...</div>
+  <h3 style="margin-top:14px">Decision</h3><label>Reason (shown only to you, saved when rejecting)<input id="reason" value=""></label>
+  <div class="acts">${r.status !== "approved" ? `<button class="btn ok" data-act="rstatus" data-s="approved" data-id="${esc(id)}">Approve</button>` : ""}${r.status !== "rejected" ? `<button class="btn bad" data-act="rstatus" data-s="rejected" data-id="${esc(id)}" data-confirm="1">${r.status === "approved" ? "Suspend" : "Reject"}</button>` : ""}</div>`);
+  getDocs(collection(db, "restaurants", id, "menu")).then((q) => { const el = $("r-menu"); if (!el) return; const it = q.docs.map((d) => d.data()); el.innerHTML = it.length ? it.map((i) => `<div><span>${esc(i.name || i.title)}${i.isVeg === false || i.veg === false ? " 🔴" : " 🟢"}</span><span>${rs(i.pricePaise ?? i.price)}${i.available === false ? " (off)" : ""}</span></div>`).join("") : "No menu items yet."; }).catch(() => { if ($("r-menu")) $("r-menu").textContent = "Could not load menu."; });
+}
+
+function openRider(id) {
+  const r = data.riders.find((x) => x.id === id); if (!r) return;
+  const s = riderStats(id), dep = data.deposits.filter((d) => d.riderUid === id).reduce((a, d) => a + num(d.amountPaise), 0);
+  const recent = data.orders.filter((o) => o.riderUid === id).sort((a, b) => ms(b.createdAt) - ms(a.createdAt)).slice(0, 8).map((o) => `<div class="click" data-open="order:${esc(o.id)}" style="cursor:pointer"><span>#${esc(short(o.id))} · ${esc(o.restaurantName)}</span><span>${pill(o.status)}</span></div>`).join("");
+  openModal(r.name, `<div class="row">${pill(r.status)}${r.status === "approved" && r.isOnline ? `<button class="btn sm bad" data-act="roffline" data-id="${esc(id)}">Force offline</button>` : ""}</div>
+  <div class="kv">${kv("Phone", esc(r.phone) + copyBtn(r.phone))}${kv("Vehicle", esc((r.vehicleType || "") + " " + (r.vehicleNumber || "")))}${kv("City", esc(r.city))}${kv("Online now", r.isOnline ? "Yes" : "No")}${kv("Registered", dt(r.createdAt))}${kv("Reject reason", esc(r.rejectReason))}</div>
+  <div class="grid" style="margin-top:12px">${stat("Trips", s.trips)}${stat("Active now", s.active)}${stat("Earned", rs(s.earned))}${stat("Cash collected", rs(s.cash))}${stat("Cash deposited", rs(dep))}${stat("To deposit", rs(s.cash - dep), s.cash - dep > 0 ? "alert" : "good")}</div>
+  <h3 style="margin-top:14px">Recent deliveries</h3><div class="kv">${recent || "None yet."}</div>
+  <h3 style="margin-top:14px">Decision</h3><label>Reason (saved when rejecting)<input id="reason" value=""></label>
+  <div class="acts">${r.status !== "approved" ? `<button class="btn ok" data-act="ristatus" data-s="approved" data-id="${esc(id)}">Approve</button>` : ""}${r.status !== "rejected" ? `<button class="btn bad" data-act="ristatus" data-s="rejected" data-id="${esc(id)}" data-confirm="1">${r.status === "approved" ? "Suspend" : "Reject"}</button>` : ""}${r.status === "approved" ? `<button class="btn org" data-act="depopen" data-id="${esc(id)}">Record cash deposit</button>` : ""}</div>`);
+}
+
+function openCust(id) {
+  const u = data.users.find((x) => x.id === id); if (!u) return;
+  const s = custStats(id), recent = data.orders.filter((o) => o.customerUid === id).sort((a, b) => ms(b.createdAt) - ms(a.createdAt)).slice(0, 10).map((o) => `<div data-open="order:${esc(o.id)}" style="cursor:pointer"><span>#${esc(short(o.id))} · ${esc(o.restaurantName)}</span><span>${rs(o.totalPaise)} ${pill(o.status)}</span></div>`).join("");
+  openModal(u.name || "Customer", `<div class="kv">${kv("Email", esc(u.email) + copyBtn(u.email))}${kv("Joined", dt(u.createdAt))}${kv("Orders", s.count)}${kv("Total spent (delivered)", rs(s.spent))}</div><h3 style="margin-top:14px">Saved addresses</h3><div id="c-addr" class="kv">Loading...</div><h3 style="margin-top:14px">Recent orders</h3><div class="kv">${recent || "No orders yet."}</div>`);
+  getDocs(collection(db, "users", id, "addresses")).then((q) => { const el = $("c-addr"); if (el) el.innerHTML = q.docs.length ? q.docs.map((d) => `<div><span>${esc(d.data().label)}</span><span>${esc(d.data().addressLine)}</span></div>`).join("") : "None."; }).catch(() => { if ($("c-addr")) $("c-addr").textContent = "Could not load."; });
+}
+
+function openAssign(orderId) {
+  const o = data.orders.find((x) => x.id === orderId); if (!o) return;
+  const riders = data.riders.filter((r) => r.status === "approved").sort((a, b) => (b.isOnline ? 1 : 0) - (a.isOnline ? 1 : 0));
+  openModal("Assign rider · #" + short(orderId), riders.length ? `<label>Choose rider<select id="asg">${riders.map((r) => `<option value="${esc(r.id)}">${r.isOnline ? "🟢" : "⚪"} ${esc(r.name)} · ${esc(r.phone)} · ${riderStats(r.id).active} active</option>`).join("")}</select></label><div class="acts"><button class="btn org" data-act="assign" data-id="${esc(orderId)}" data-confirm="1">Assign</button></div>` : empty("No approved riders yet."));
+}
+function openDeposit(riderId) {
+  const r = data.riders.find((x) => x.id === riderId);
+  openModal("Cash deposit · " + (r?.name || ""), `<div class="form"><label>Amount received (₹)<input id="dep-a" inputmode="decimal"></label><label>Note (optional)<input id="dep-n"></label></div><div class="acts"><button class="btn ok" data-act="deposit" data-id="${esc(riderId)}">Save deposit</button></div>`);
+}
+function openBanner(id) { const x = id === "new" ? { active: true, sortOrder: data.banners.length + 1 } : data.banners.find((b) => b.id === id); openModal(id === "new" ? "New banner" : "Edit banner", form(BANNER_F, x) + `<div class="acts"><button class="btn" data-act="bsave" data-id="${esc(id)}">Save</button>${id !== "new" ? `<button class="btn bad" data-act="bdel" data-id="${esc(id)}" data-confirm="1">Delete</button>` : ""}</div>`); }
+function openCoupon(id) {
+  const x = id === "new" ? { active: true, type: "percent" } : data.coupons.find((c) => c.id === id);
+  const v = { ...x, minOrder: num(x.minOrderPaise) / 100, maxDiscount: num(x.maxDiscountPaise) / 100, expires: ts(x.expiresAt) ? ts(x.expiresAt).toISOString().slice(0, 10) : "" };
+  openModal(id === "new" ? "New coupon" : "Edit coupon", form(COUPON_F, v) + `<div class="acts"><button class="btn" data-act="csave" data-id="${esc(id)}">Save</button>${id !== "new" ? `<button class="btn bad" data-act="cdel" data-id="${esc(id)}" data-confirm="1">Delete</button>` : ""}</div>`);
+}
+
+/* ---------- actions ---------- */
+async function run(label, fn, keepModal) { try { await fn(); toast(label); if (!keepModal) closeModal(); } catch (e) { toast("Failed: " + (e?.code || e?.message || "unknown error")); } }
+const upd = (c, id, v) => updateDoc(doc(db, c, id), v);
+
+const ACTIONS = {
+  close: async () => closeModal(),
+  rstatus: (b) => run(b.dataset.s === "approved" ? "Restaurant approved" : "Restaurant rejected", async () => { const r = ($("reason")?.value || "").trim(); await upd("restaurants", b.dataset.id, { status: b.dataset.s, reviewedAt: serverTimestamp(), ...(b.dataset.s === "rejected" ? { rejectReason: r } : {}) }); log("restaurant " + b.dataset.s, b.dataset.id, r); }),
+  ristatus: (b) => run(b.dataset.s === "approved" ? "Rider approved" : "Rider rejected", async () => { const r = ($("reason")?.value || "").trim(); await upd("riders", b.dataset.id, { status: b.dataset.s, reviewedAt: serverTimestamp(), ...(b.dataset.s === "rejected" ? { rejectReason: r, isOnline: false } : {}) }); log("rider " + b.dataset.s, b.dataset.id, r); }),
+  rtoggle: (b) => run("Updated", async () => { const r = data.restaurants.find((x) => x.id === b.dataset.id); await upd("restaurants", b.dataset.id, { isOpen: !r.isOpen }); log(r.isOpen ? "force close" : "force open", r.name); }),
+  rsave: (b) => run("Settings saved", async () => { const v = { deliveryRadiusKm: Number($("e-rad").value), packagingChargePaise: Math.round(Number($("e-pack").value) * 100), prepTimeMin: Number($("e-prep").value) }; if (!(v.deliveryRadiusKm > 0 && v.deliveryRadiusKm <= 15) || !(v.packagingChargePaise >= 0) || !(v.prepTimeMin >= 5)) throw { message: "Check radius (1-15), packaging and prep time" }; await upd("restaurants", b.dataset.id, v); log("restaurant settings", b.dataset.id, JSON.stringify(v)); }),
+  roffline: (b) => run("Rider is offline", async () => { await upd("riders", b.dataset.id, { isOnline: false }); log("force offline", b.dataset.id); }),
+  paid: (b) => run("Marked as paid", async () => { const n = ($("note-" + b.dataset.id).value || "").trim(); await upd("payouts", b.dataset.id, { status: "paid", utr: n, paidAt: serverTimestamp() }); log("withdrawal paid", b.dataset.id, n); }, true),
+  payrej: (b) => run("Withdrawal rejected", async () => { const n = ($("note-" + b.dataset.id).value || "").trim(); await upd("payouts", b.dataset.id, { status: "rejected", note: n, reviewedAt: serverTimestamp() }); log("withdrawal rejected", b.dataset.id, n); }, true),
+  cancelorder: (b) => run("Order cancelled", async () => { await upd("orders", b.dataset.id, { status: "cancelled", cancelReason: "Cancelled by Twinga", updatedAt: serverTimestamp() }); log("order cancelled", b.dataset.id); }),
+  assignopen: async (b) => openAssign(b.dataset.id),
+  assign: (b) => run("Rider assigned", async () => { const r = data.riders.find((x) => x.id === $("asg").value); await upd("orders", b.dataset.id, { riderUid: r.id, riderName: r.name, riderPhone: r.phone || "", assignedBy: "admin", updatedAt: serverTimestamp() }); log("rider assigned", b.dataset.id, r.name); }),
+  showotp: async (b) => { try { const s = await getDoc(doc(db, "orders", b.dataset.id, "secrets", "otp")); $("o-otp").innerHTML = `<b style="font-size:18px;letter-spacing:3px">${esc(s.data()?.code ?? "n/a")}</b>`; log("viewed otp", b.dataset.id); } catch (_) { toast("Could not read OTP"); } },
+  depopen: async (b) => openDeposit(b.dataset.id),
+  deposit: (b) => run("Deposit recorded", async () => { const a = Math.round(Number($("dep-a").value) * 100); if (!(a > 0)) throw { message: "Enter the amount" }; await addDoc(collection(db, "cashDeposits"), { riderUid: b.dataset.id, amountPaise: a, note: $("dep-n").value.trim(), createdAt: serverTimestamp() }); log("cash deposit", b.dataset.id, rs(a)); }),
+  bsave: (b) => run("Banner saved", async () => { const v = readForm(BANNER_F); if (!v.title) throw { message: "Enter a title" }; if (b.dataset.id === "new") await addDoc(collection(db, "banners"), { ...v, createdAt: serverTimestamp() }); else await upd("banners", b.dataset.id, v); log("banner saved", v.title); }),
+  bdel: (b) => run("Banner deleted", async () => { await deleteDoc(doc(db, "banners", b.dataset.id)); log("banner deleted", b.dataset.id); }),
+  csave: (b) => run("Coupon saved", async () => { const f = readForm(COUPON_F); const code = f.code.toUpperCase().replace(/\s+/g, ""); if (!code) throw { message: "Enter a code" }; if (!(f.value > 0)) throw { message: "Enter the value" }; const v = { code, description: f.description, type: f.type, value: f.value, minOrderPaise: Math.round(f.minOrder * 100), maxDiscountPaise: Math.round(f.maxDiscount * 100), usageLimit: f.usageLimit, active: f.active, expiresAt: f.expires ? Timestamp.fromDate(new Date(f.expires + "T23:59:59")) : null }; if (b.dataset.id === "new") await addDoc(collection(db, "coupons"), { ...v, usedCount: 0, createdAt: serverTimestamp() }); else await upd("coupons", b.dataset.id, v); log("coupon saved", code); }),
+  cdel: (b) => run("Coupon deleted", async () => { await deleteDoc(doc(db, "coupons", b.dataset.id)); log("coupon deleted", b.dataset.id); }),
+  saveprice: () => run("Pricing saved", async () => { const out = {}; for (const i of document.querySelectorAll("[data-price]")) { const v = Number(i.value.trim()); if (i.value.trim() === "" || !isFinite(v) || v < 0) throw { message: "Check the value for " + i.dataset.price }; out[i.dataset.price] = v; } await setDoc(doc(db, "config", "pricing"), out, { merge: true }); log("pricing changed", "config/pricing", JSON.stringify(out)); }, true),
+  csv: async (b) => {
+    const k = b.dataset.id, rmap = byId(data.restaurants);
+    if (k === "orders") download("orders.csv", [["Order", "Placed", "Status", "Restaurant", "Customer", "Rider", "Food", "Packaging", "GST food", "Delivery", "Platform fee", "GST fees", "Round off", "Total", "Commission", "Rider pay"], ...ordersFiltered().map((o) => [o.id, dt(o.createdAt), o.status, o.restaurantName, o.customerName, o.riderName, ...["foodSubtotalPaise", "packagingPaise", "foodGstPaise", "deliveryPaise", "platformFeePaise", "gstOnFeesPaise", "roundOffPaise", "totalPaise", "commissionPaise", "riderPayPaise"].map((f) => num(o[f]) / 100)])]);
+    else if (k === "restaurants") download("restaurants.csv", [["Name", "Status", "Phone", "Cuisines", "FSSAI", "Address", "Lat", "Lng", "Radius km"], ...data.restaurants.map((r) => [r.name, r.status, r.phone, r.cuisines, r.fssai, r.addressLine, r.lat, r.lng, r.deliveryRadiusKm])]);
+    else if (k === "riders") download("riders.csv", [["Name", "Status", "Phone", "Vehicle", "Number", "City", "Trips", "Earned"], ...data.riders.map((r) => { const s = riderStats(r.id); return [r.name, r.status, r.phone, r.vehicleType, r.vehicleNumber, r.city, s.trips, s.earned / 100]; })]);
+    else if (k === "customers") download("customers.csv", [["Name", "Email", "Joined", "Orders", "Spent"], ...data.users.filter((u) => u.role === "customer").map((u) => { const s = custStats(u.id); return [u.name, u.email, dt(u.createdAt), s.count, s.spent / 100]; })]);
+    else if (k === "payouts") download("withdrawals.csv", [["Requested", "For", "Role", "Amount", "Status", "Method", "Holder", "UPI", "Bank", "Account", "IFSC", "UTR"], ...data.payouts.map((p) => [dt(p.createdAt), ownerName(p), p.role, num(p.amountPaise) / 100, p.status, p.method, p.holderName, p.upiId, p.bankName, p.accountNumber, p.ifsc, p.utr])]);
+    else if (k === "settle-rest") download("restaurant-settlements.csv", [["Restaurant", "Orders", "Food sales", "Commission", "Earned", "Paid", "Pending", "Available"], ...settlements().rest.map((x) => [x.r.name, x.n, x.food / 100, x.com / 100, x.earned / 100, x.paid / 100, x.pend / 100, x.avail / 100])]);
+    else if (k === "settle-rider") download("rider-settlements.csv", [["Rider", "Trips", "Earned", "Paid out", "Available", "Cash collected", "Deposited", "To deposit"], ...settlements().rid.map((x) => [x.r.name, x.s.trips, x.s.earned / 100, x.paid / 100, x.avail / 100, x.s.cash / 100, x.dep / 100, x.owe / 100])]);
+    void rmap;
+  },
+};
+
+document.addEventListener("click", async (e) => {
+  const op = e.target.closest("[data-open]");
+  const t = e.target.closest("button");
+  if (!t || (op && t === op) || (op && !t.dataset.act && !t.dataset.tab && !t.dataset.filter && !t.dataset.copy)) {
+    if (op) { const [k, id] = op.dataset.open.split(":"); ({ order: openOrder, rest: openRest, rider: openRider, cust: openCust, banner: openBanner, coupon: openCoupon })[k]?.(id); $("sres").classList.add("hide"); return; }
+    if (e.target === $("modal")) closeModal();
+    if (!t) return;
+  }
+  if (t.dataset.tab) { tab = t.dataset.tab; window.scrollTo(0, 0); return render(); }
+  if (t.dataset.filter) { if (t.dataset.st === "r") S.range = t.dataset.v; else S.f[t.dataset.filter] = t.dataset.v; store.set("tw_state", S); return render(); }
+  if (t.dataset.copy) { try { await navigator.clipboard.writeText(t.dataset.copy); toast("Copied"); } catch (_) { toast("Copy not allowed here. Select the text and copy it."); } return; }
+  if (t.dataset.act) {
+    if (t.dataset.confirm && !t.dataset.armed) { t.dataset.armed = "1"; t.dataset.label = t.textContent; t.textContent = "Tap again to confirm"; setTimeout(() => { if (t.isConnected) { delete t.dataset.armed; t.textContent = t.dataset.label; } }, 4000); return; }
+    t.disabled = true; await ACTIONS[t.dataset.act]?.(t); if (t.isConnected) t.disabled = false;
+  }
+});
+document.addEventListener("input", (e) => {
+  if (e.target.id === "q") { S.q[tab] = e.target.value; store.set("tw_state", S); if (RESULTS[tab]) $("results").innerHTML = RESULTS[tab](); }
+  if (/^sim-/.test(e.target.id || "")) $("sim-out").innerHTML = simHtml();
+  if (e.target.id === "gs") globalSearch(e.target.value);
+});
+
+function globalSearch(v) {
+  const q = v.trim().toLowerCase(), box = $("sres"); if (q.length < 2) { box.classList.add("hide"); return; }
+  const has = (...a) => a.some((x) => String(x || "").toLowerCase().includes(q)), out = [];
+  data.orders.filter((o) => has(o.id, short(o.id), o.customerName, o.restaurantName)).slice(0, 5).forEach((o) => out.push([`order:${o.id}`, `Order #${short(o.id)}`, `${o.restaurantName} · ${o.customerName} · ${o.status}`]));
+  data.restaurants.filter((r) => has(r.name, r.phone)).slice(0, 4).forEach((r) => out.push([`rest:${r.id}`, r.name, "Restaurant · " + (r.phone || "")]));
+  data.riders.filter((r) => has(r.name, r.phone, r.vehicleNumber)).slice(0, 4).forEach((r) => out.push([`rider:${r.id}`, r.name, "Rider · " + (r.phone || "")]));
+  data.users.filter((u) => u.role === "customer" && has(u.name, u.email)).slice(0, 4).forEach((u) => out.push([`cust:${u.id}`, u.name || "Customer", "Customer · " + (u.email || "")]));
+  box.innerHTML = out.length ? out.map((r) => `<div data-open="${esc(r[0])}"><b>${esc(r[1])}</b><br><small>${esc(r[2])}</small></div>`).join("") : `<div><small>No results</small></div>`;
+  box.classList.remove("hide");
+}
+
+/* ---------- alerts ---------- */
+function beep() { if (!sound) return; try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = 0.15; o.start(); setTimeout(() => { o.stop(); c.close(); }, 350); } catch (_) {} }
+function checkAlerts() {
+  if (loaded.size < 4) return;
+  const c = { orders: data.orders.filter((o) => o.status === "placed").length, rest: pendingCount("restaurants"), riders: pendingCount("riders"), pay: pendingCount("payouts") };
+  if (lastCounts) {
+    if (c.orders > lastCounts.orders) { beep(); toast("New order received"); }
+    else if (c.rest > lastCounts.rest) { beep(); toast("New restaurant waiting for approval"); }
+    else if (c.riders > lastCounts.riders) { beep(); toast("New rider waiting for approval"); }
+    else if (c.pay > lastCounts.pay) { beep(); toast("New withdrawal request"); }
+  }
+  lastCounts = c;
+}
+
+/* ---------- data ---------- */
+function listen(name, ref) {
+  unsubs.push(onSnapshot(ref, (snap) => { data[name] = snap.docs.map((d) => ({ id: d.id, ...d.data() })); loaded.add(name); checkAlerts(); render(); }, (err) => toast("Could not load " + name + ": " + err.code)));
+}
+function start() {
+  listen("restaurants", collection(db, "restaurants")); listen("riders", collection(db, "riders")); listen("payouts", collection(db, "payouts")); listen("orders", collection(db, "orders"));
+  listen("users", collection(db, "users")); listen("banners", collection(db, "banners")); listen("coupons", collection(db, "coupons"));
+  listen("deposits", collection(db, "cashDeposits")); listen("logs", collection(db, "adminLogs"));
+  unsubs.push(onSnapshot(doc(db, "config", "pricing"), (s) => { data.pricing = s.exists() ? s.data() : null; render(); }));
+}
+function stop() { unsubs.forEach((u) => u()); unsubs = []; loaded.clear(); lastCounts = null; }
+setInterval(() => { if (tab === "live" && !$("app").classList.contains("hide")) render(); }, 20000);
+
+/* ---------- auth and chrome ---------- */
+$("snd").textContent = sound ? "🔔" : "🔕";
+$("snd").addEventListener("click", () => { sound = !sound; store.set("tw_sound", sound); $("snd").textContent = sound ? "🔔" : "🔕"; if (sound) beep(); toast(sound ? "Alert sound on" : "Alert sound off"); });
+const setTheme = (t) => { document.documentElement.dataset.theme = t; store.set("tw_theme", t); };
+setTheme(store.get("tw_theme", "light"));
+$("thm").addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
+$("lform").addEventListener("submit", async (e) => { e.preventDefault(); $("lerr").textContent = ""; $("lbtn").disabled = true; try { await signInWithEmailAndPassword(auth, $("em").value.trim(), $("pw").value); } catch (_) { $("lerr").textContent = "Wrong email or password, or no internet."; } $("lbtn").disabled = false; });
+$("out").addEventListener("click", () => signOut(auth));
+onAuthStateChanged(auth, (user) => {
+  if (user && user.uid === ADMIN_UID) { $("login").classList.add("hide"); $("app").classList.remove("hide"); start(); }
+  else { stop(); $("app").classList.add("hide"); $("login").classList.remove("hide"); if (user) { $("lerr").textContent = "This account is not the Twinga admin."; signOut(auth); } }
+});
+</script>
+</body>
+</html>
