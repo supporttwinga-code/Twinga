@@ -600,6 +600,52 @@ class _ActiveDeliveryState extends State<_ActiveDelivery> {
     }
   }
 
+  /// Google Maps kholta hai aur turn-by-turn navigation shuru karta hai.
+  /// Pehle Maps app, nahi mile to browser wala Maps link.
+  Future<void> _navigate({double? lat, double? lng, String address = ''}) async {
+    final String dest = (lat != null && lng != null)
+        ? '$lat,$lng'
+        : Uri.encodeComponent(address);
+    if (dest.isEmpty) {
+      return;
+    }
+    final List<Uri> tries = <Uri>[
+      Uri.parse('google.navigation:q=$dest&mode=l'),
+      Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=$dest&travelmode=driving',
+      ),
+    ];
+    for (final Uri u in tries) {
+      try {
+        if (await launchUrl(u, mode: LaunchMode.externalApplication)) {
+          return;
+        }
+      } catch (_) {}
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open Google Maps.')),
+      );
+    }
+  }
+
+  Widget _navButton(VoidCallback onTap, String label) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: onTap,
+        icon: const Icon(Icons.navigation_rounded),
+        label: Text(label),
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(46),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _pickedUp() async {
     setState(() {
       _busy = true;
@@ -798,6 +844,22 @@ class _ActiveDeliveryState extends State<_ActiveDelivery> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (addr.isNotEmpty) Text(addr),
+                      if (addr.isNotEmpty ||
+                          (r['lat'] is num && r['lng'] is num)) ...[
+                        const SizedBox(height: 10),
+                        _navButton(
+                          () => _navigate(
+                            lat: r['lat'] is num && r['lng'] is num
+                                ? (r['lat'] as num).toDouble()
+                                : null,
+                            lng: r['lat'] is num && r['lng'] is num
+                                ? (r['lng'] as num).toDouble()
+                                : null,
+                            address: addr,
+                          ),
+                          'Navigate to restaurant',
+                        ),
+                      ],
                       if (phone.isNotEmpty) ...[
                         const SizedBox(height: 10),
                         SizedBox(
@@ -855,6 +917,22 @@ class _ActiveDeliveryState extends State<_ActiveDelivery> {
                         ),
                       Text(line),
                       if (landmark.isNotEmpty) Text('Landmark: $landmark'),
+                      if (line.isNotEmpty ||
+                          (x['lat'] is num && x['lng'] is num)) ...[
+                        const SizedBox(height: 10),
+                        _navButton(
+                          () => _navigate(
+                            lat: x['lat'] is num && x['lng'] is num
+                                ? (x['lat'] as num).toDouble()
+                                : null,
+                            lng: x['lat'] is num && x['lng'] is num
+                                ? (x['lng'] as num).toDouble()
+                                : null,
+                            address: line,
+                          ),
+                          'Navigate to customer',
+                        ),
+                      ],
                     ],
                   );
                 },
