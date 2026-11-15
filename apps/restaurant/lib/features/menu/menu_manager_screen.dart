@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/photo.dart';
 import '../../core/theme.dart';
 import 'menu_item_screen.dart';
 
@@ -22,6 +23,53 @@ class MenuManagerScreen extends StatelessWidget {
 
   final String restaurantId;
   final String restaurantName;
+
+  Widget _thumb(Map<String, dynamic> d, bool isVeg) {
+    final bytes = decodePhoto(d['imageData']);
+    final Color vc = isVeg ? TwingaColors.veg : const Color(0xFFB71C1C);
+    return SizedBox(
+      width: 56,
+      height: 56,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: bytes != null
+                  ? Image.memory(bytes, fit: BoxFit.cover, gaplessPlayback: true)
+                  : Container(
+                      color: const Color(0xFFEAF2FE),
+                      child: Icon(
+                        Icons.restaurant_rounded,
+                        color: TwingaColors.blue.withValues(alpha: 0.4),
+                      ),
+                    ),
+            ),
+          ),
+          Positioned(
+            left: 3,
+            top: 3,
+            child: Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(color: vc, width: 1.4),
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Center(
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(color: vc, shape: BoxShape.circle),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +153,7 @@ class MenuManagerScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: ListTile(
+                  contentPadding: const EdgeInsets.fromLTRB(10, 6, 12, 6),
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
@@ -115,11 +164,7 @@ class MenuManagerScreen extends StatelessWidget {
                       ),
                     );
                   },
-                  leading: Icon(
-                    Icons.circle,
-                    size: 14,
-                    color: isVeg ? TwingaColors.veg : const Color(0xFFB71C1C),
-                  ),
+                  leading: _thumb(d, isVeg),
                   title: Text(
                     name,
                     style: const TextStyle(
