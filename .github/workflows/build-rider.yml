@@ -27,7 +27,7 @@ jobs:
       - run: sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <application#' android/app/src/main/AndroidManifest.xml
       - run: sed -i 's#<application#<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>\n    <application#' android/app/src/main/AndroidManifest.xml
       - run: sed -i 's#<application#<queries><intent><action android:name="android.intent.action.DIAL"/><data android:scheme="tel"/></intent></queries>\n    <application#' android/app/src/main/AndroidManifest.xml
-      - run: flutter pub add firebase_core firebase_auth cloud_firestore geolocator url_launcher
+      - run: flutter pub add firebase_core firebase_auth cloud_firestore geolocator url_launcher image_picker
       - name: Generate firebase_options.dart
         run: |
           python3 - <<'PY'
