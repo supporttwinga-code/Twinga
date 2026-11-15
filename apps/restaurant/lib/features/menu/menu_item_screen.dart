@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/photo.dart';
 import '../../core/theme.dart';
 
 class MenuItemScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class _MenuItemScreenState extends State<MenuItemScreen> {
   bool _available = true;
   bool _saving = false;
   String? _error;
+  String? _image;
 
   CollectionReference<Map<String, dynamic>> get _col => FirebaseFirestore
       .instance
@@ -47,6 +49,8 @@ class _MenuItemScreenState extends State<MenuItemScreen> {
       }
       _isVeg = d['isVeg'] is bool ? d['isVeg'] as bool : true;
       _available = d['isAvailable'] is bool ? d['isAvailable'] as bool : false;
+      final dynamic img = d['imageData'];
+      _image = img is String && img.isNotEmpty ? img : null;
     }
   }
 
@@ -92,6 +96,7 @@ class _MenuItemScreenState extends State<MenuItemScreen> {
         'pricePaise': (price! * 100).round(),
         'isVeg': _isVeg,
         'isAvailable': _available,
+        'imageData': _image ?? '',
         'updatedAt': FieldValue.serverTimestamp(),
       };
       final DocumentSnapshot<Map<String, dynamic>>? old = widget.existing;
@@ -183,6 +188,20 @@ class _MenuItemScreenState extends State<MenuItemScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          PhotoField(
+            label: 'Food photo',
+            hint: 'Tap to add a photo of this dish',
+            value: _image,
+            height: 170,
+            maxSide: 600,
+            quality: 65,
+            onChanged: (String? v) {
+              setState(() {
+                _image = v;
+              });
+            },
+          ),
+          const SizedBox(height: 18),
           TextField(
             controller: _name,
             textCapitalization: TextCapitalization.words,
