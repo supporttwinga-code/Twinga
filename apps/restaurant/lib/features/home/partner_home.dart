@@ -7,6 +7,7 @@ import '../earnings/earnings_screen.dart';
 import '../menu/menu_manager_screen.dart';
 import '../orders/restaurant_orders_screen.dart';
 import '../registration/register_restaurant_screen.dart';
+import '../store/store_profile_screen.dart';
 import '../support/support_screen.dart';
 import '../withdraw/withdraw_screen.dart';
 
@@ -525,6 +526,15 @@ class _ApprovedHome extends StatelessWidget {
                       restaurantId: restaurantId,
                       restaurantName: rname,
                     ),
+                  ),
+                ),
+                _action(
+                  context,
+                  Icons.add_photo_alternate_outlined,
+                  'Store photos',
+                  () => _open(
+                    context,
+                    StoreProfileScreen(restaurantId: restaurantId),
                   ),
                 ),
                 _action(
