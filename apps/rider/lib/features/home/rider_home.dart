@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../delivery/delivery_area.dart';
 import '../earnings/rider_earnings_screen.dart';
+import '../profile/rider_profile_screen.dart';
 import '../registration/register_rider_screen.dart';
 import '../support/support_screen.dart';
 import '../withdraw/withdraw_screen.dart';
@@ -208,7 +209,6 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String initial = name.trim().isEmpty ? 'R' : name.trim()[0].toUpperCase();
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -232,25 +232,7 @@ class _Header extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [Color(0xFFFFC15E), TwingaColors.orange],
-                  ),
-                ),
-                child: Text(
-                  initial,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+              RiderAvatar(name: name),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
