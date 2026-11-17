@@ -131,6 +131,29 @@ const store = { get: (k, d) => { try { const v = localStorage.getItem(k); return
 let toastTimer;
 function toast(m) { const t = $("toast"); t.textContent = m; t.classList.remove("hide"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add("hide"), 3400); }
 
+const photoSrc = (b) => "data:image/jpeg;base64," + b;
+const photoImg = (b, css) => (b ? `<img alt="" src="${photoSrc(b)}" style="${css}">` : "");
+function shrinkImage(file, maxSide, maxBytes) {
+  return new Promise((resolve, reject) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const k = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      let q = 0.82, out = c.toDataURL("image/jpeg", q);
+      while (out.length > maxBytes * 1.37 && q > 0.35) { q -= 0.1; out = c.toDataURL("image/jpeg", q); }
+      if (out.length > maxBytes * 1.37) reject(new Error("This photo is too big. Please choose a smaller one."));
+      else resolve(out.split(",")[1]);
+    };
+    img.onerror = () => reject(new Error("This file is not a photo."));
+    img.src = url;
+  });
+}
+let bannerImg = "";
+const bannerPreview = () => (bannerImg ? photoImg(bannerImg, "width:100%;max-height:190px;object-fit:cover;border-radius:16px;display:block") : `<div class="empty">No photo yet. A colour banner with your title will be shown.</div>`);
+
 function csv(rows) { return rows.map((r) => r.map((c) => { const s = String(c ?? ""); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(",")).join("\n"); }
 function download(name, rows) {
   const a = document.createElement("a");
@@ -168,7 +191,7 @@ function agg(orders) {
     count: orders.length, delivered: d.length, bad: bad.length,
     badPct: done.length ? Math.round((bad.length / done.length) * 100) : 0,
     gmv: sum(d, "totalPaise"), food: sum(d, "foodSubtotalPaise"), commission: sum(d, "commissionPaise"),
-    platform: sum(d, "platformFeePaise"), delivery: sum(d, "deliveryPaise"), riderPay: sum(d, "riderPayPaise"),
+    discount: sum(d, "discountPaise"), platform: sum(d, "platformFeePaise"), delivery: sum(d, "deliveryPaise"), riderPay: sum(d, "riderPayPaise"),
     gst: sum(d, "foodGstPaise") + sum(d, "gstOnFeesPaise"), packaging: sum(d, "packagingPaise"),
     aov: d.length ? Math.round(sum(d, "totalPaise") / d.length) : 0,
     avgAccept: avg(acc), avgDelivery: avg(del),
@@ -217,7 +240,7 @@ function viewDashboard() {
   const live = data.orders.filter((o) => LIVE.includes(o.status));
   const un = data.orders.filter(unassigned);
   const online = data.riders.filter((r) => r.status === "approved" && r.isOnline).length;
-  const net = a.commission + a.platform + a.delivery - a.riderPay;
+  const net = a.commission + a.platform + a.delivery - a.riderPay - a.discount;
   // charts
   let vals = [], labels = [], sales = [];
   if (S.range === "today") {
@@ -251,8 +274,8 @@ function viewDashboard() {
       ${stat("Customer paid (GMV)", rs(a.gmv))}${stat("Average order", rs(a.aov))}
       ${stat("Food sales", rs(a.food))}${stat("Commission", rs(a.commission))}
       ${stat("Platform fees", rs(a.platform))}${stat("Delivery fees", rs(a.delivery))}
-      ${stat("Rider pay", rs(a.riderPay))}${stat("GST collected", rs(a.gst))}
-      ${stat("Twinga net", rs(net), net >= 0 ? "good" : "red", "commission + fees + delivery − rider pay")}
+      ${stat("Rider pay", rs(a.riderPay))}${stat("GST collected", rs(a.gst))}${stat("Coupon discounts", rs(a.discount))}
+      ${stat("Twinga net", rs(net), net >= 0 ? "good" : "red", "commission + fees + delivery − rider pay − coupon discounts")}
       ${stat("Avg time to accept", mins(a.avgAccept) || "—")}${stat("Avg delivery time", mins(a.avgDelivery) || "—")}
       ${stat("Customers", data.users.filter((u) => u.role === "customer").length)}
       ${stat("Approved restaurants", data.restaurants.filter((r) => r.status === "approved").length)}
@@ -350,15 +373,15 @@ function viewFinance() {
   <h3 style="margin:18px 0 10px">Riders</h3>${dt_ ? `<div class="tw"><table><tr><th>Rider</th><th>Trips</th><th>Earned</th><th>Paid out</th><th>Available</th><th>Cash collected</th><th>Deposited</th><th>To deposit</th><th></th></tr>${dt_}</table></div>` : empty("No approved riders yet.")}`;
 }
 
-const BANNER_F = [["title", "Title", "text"], ["subtitle", "Subtitle", "text"], ["imageUrl", "Image link (https)", "text"], ["sortOrder", "Show order (1 = first)", "number"], ["active", "Show to customers", "check"]];
+const BANNER_F = [["title", "Title", "text"], ["subtitle", "Subtitle", "text"], ["sortOrder", "Show order (1 = first)", "number"], ["active", "Show to customers", "check"]];
 const COUPON_F = [["code", "Code (capital letters)", "text"], ["description", "Description", "text"], ["type", "Type", "select:percent|flat"], ["value", "Value (percent, or rupees for flat)", "number"], ["minOrder", "Minimum order (rupees)", "number"], ["maxDiscount", "Maximum discount (rupees)", "number"], ["usageLimit", "Total uses allowed (0 = unlimited)", "number"], ["expires", "Last valid date", "date"], ["active", "Active", "check"]];
 function viewMarketing() {
   const b = [...data.banners].sort((x, y) => num(x.sortOrder) - num(y.sortOrder)), c = [...data.coupons].sort((x, y) => ms(y.createdAt) - ms(x.createdAt));
-  return `<h2>Banners and coupons</h2><div class="note">You can create and manage these now. The customer app will show banners and apply coupons in the next phase.</div>
+  return `<h2>Banners and coupons</h2><div class="note">Banners you switch on appear on the customer app home screen. Coupons you switch on can be applied by customers at checkout. Each customer can use a coupon once. The discount is paid by Twinga, so the restaurant payout does not change.</div>
   <div class="row" style="margin-bottom:10px"><h3>Banners</h3><button class="btn sm" data-open="banner:new">Add banner</button></div>
-  ${b.length ? `<div class="list">${b.map((x) => `<div class="card click" data-open="banner:${esc(x.id)}"><div class="row"><h3>${esc(x.title)}</h3>${pill(x.active ? "active" : "inactive")}</div><div class="kv">${kv("Subtitle", esc(x.subtitle))}${kv("Order", num(x.sortOrder))}</div></div>`).join("")}</div>` : empty("No banners yet.")}
+  ${b.length ? `<div class="list">${b.map((x) => `<div class="card click" data-open="banner:${esc(x.id)}">${photoImg(x.imageData, "width:100%;height:96px;object-fit:cover;border-radius:12px;margin-bottom:10px;display:block")}<div class="row"><h3>${esc(x.title)}</h3>${pill(x.active ? "active" : "inactive")}</div><div class="kv">${kv("Subtitle", esc(x.subtitle))}${kv("Order", num(x.sortOrder))}</div></div>`).join("")}</div>` : empty("No banners yet.")}
   <div class="row" style="margin:22px 0 10px"><h3>Coupons</h3><button class="btn sm" data-open="coupon:new">Add coupon</button></div>
-  ${c.length ? `<div class="list">${c.map((x) => `<div class="card click" data-open="coupon:${esc(x.id)}"><div class="row"><h3>${esc(x.code)}</h3>${pill(x.active ? "active" : "inactive")}</div><div class="kv">${kv("Offer", x.type === "flat" ? "₹" + num(x.value) + " off" : num(x.value) + "% off")}${kv("Minimum order", num(x.minOrderPaise) ? rs(x.minOrderPaise) : "")}${kv("Valid till", dt(x.expiresAt))}${kv("Used", num(x.usedCount) + (num(x.usageLimit) ? " / " + x.usageLimit : ""))}</div></div>`).join("")}</div>` : empty("No coupons yet.")}`;
+  ${c.length ? `<div class="list">${c.map((x) => `<div class="card click" data-open="coupon:${esc(x.id)}"><div class="row"><h3>${esc(x.code)}</h3>${pill(x.active ? "active" : "inactive")}</div><div class="kv">${kv("Offer", x.type === "flat" ? "₹" + num(x.value) + " off" : num(x.value) + "% off")}${kv("Minimum order", num(x.minOrderPaise) ? rs(x.minOrderPaise) : "")}${kv("Valid till", dt(x.expiresAt))}${kv("Used", couponUses(x.code) + (num(x.usageLimit) ? " / " + x.usageLimit : ""))}</div></div>`).join("")}</div>` : empty("No coupons yet.")}`;
 }
 
 const PRICING_GROUPS = [
@@ -430,7 +453,7 @@ function openOrder(id) {
   openModal("Order #" + short(id), `<div class="row">${pill(o.status)}<b>${rs(o.totalPaise)} · Cash on delivery</b></div>
   <div class="kv">${kv("Restaurant", esc(o.restaurantName) + (rest?.phone ? " · " + esc(rest.phone) + copyBtn(rest.phone) : ""))}${kv("Customer", esc(o.customerName))}${kv("Rider", o.riderName ? esc(o.riderName) + " · " + esc(o.riderPhone || "") + copyBtn(o.riderPhone) : "Not assigned")}${kv("Distance", num(o.distanceMeters) ? (num(o.distanceMeters) / 1000).toFixed(1) + " km" : "")}<div><span>Drop address</span><span id="o-drop">Loading...</span></div><div><span>Delivery OTP</span><span id="o-otp"><button class="copy" data-act="showotp" data-id="${esc(id)}">Show OTP</button></span></div></div>
   <div class="tl">${tl}</div><h3 style="margin-top:14px">Items</h3><div class="kv">${items}</div>
-  <h3 style="margin-top:14px">Bill</h3><div class="kv">${kv("Food subtotal", rs(o.foodSubtotalPaise))}${kv("Packaging", rs(o.packagingPaise))}${kv("GST on food", rs(o.foodGstPaise))}${kv("Delivery", rs(o.deliveryPaise))}${kv("Platform fee", rs(o.platformFeePaise))}${kv("GST on fees", rs(o.gstOnFeesPaise))}${kv("Round off", rs(o.roundOffPaise))}${kv("Commission", rs(o.commissionPaise))}${kv("Rider pay", rs(o.riderPayPaise))}${kv("Cancel reason", esc(o.cancelReason))}</div>
+  <h3 style="margin-top:14px">Bill</h3><div class="kv">${kv("Food subtotal", rs(o.foodSubtotalPaise))}${kv("Packaging", rs(o.packagingPaise))}${kv("GST on food", rs(o.foodGstPaise))}${kv("Delivery", rs(o.deliveryPaise))}${kv("Platform fee", rs(o.platformFeePaise))}${kv("GST on fees", rs(o.gstOnFeesPaise))}${kv("Round off", rs(o.roundOffPaise))}${kv("Coupon", o.couponCode ? esc(o.couponCode) : "")}${kv("Coupon discount", num(o.discountPaise) ? "-" + rs(o.discountPaise) : "")}${kv("Commission", rs(o.commissionPaise))}${kv("Rider pay", rs(o.riderPayPaise))}${kv("Cancel reason", esc(o.cancelReason))}</div>
   <div class="acts">${canAssign ? `<button class="btn org" data-act="assignopen" data-id="${esc(id)}">${o.riderUid ? "Reassign rider" : "Assign rider"}</button>` : ""}${LIVE.includes(o.status) ? `<button class="btn bad" data-act="cancelorder" data-id="${esc(id)}" data-confirm="1">Cancel order</button>` : ""}</div>`);
   getDoc(doc(db, "orders", id, "secrets", "drop")).then((s) => { const d = s.data(); if ($("o-drop")) $("o-drop").textContent = d ? [d.label, d.addressLine, d.landmark && "Landmark: " + d.landmark].filter(Boolean).join(", ") : "Not available"; }).catch(() => { if ($("o-drop")) $("o-drop").textContent = "Not available"; });
 }
@@ -438,7 +461,7 @@ function openOrder(id) {
 function openRest(id) {
   const r = data.restaurants.find((x) => x.id === id); if (!r) return;
   const s = restStats(id);
-  openModal(r.name, `<div class="row">${pill(r.status)}${r.status === "approved" ? `<button class="btn sm ${r.isOpen ? "bad" : "ok"}" data-act="rtoggle" data-id="${esc(id)}">${r.isOpen ? "Force close" : "Open now"}</button>` : ""}</div>
+  openModal(r.name, `${photoImg(r.imageData, "width:100%;max-height:170px;object-fit:cover;border-radius:16px;display:block;margin-bottom:12px")}<div class="row">${pill(r.status)}${r.status === "approved" ? `<button class="btn sm ${r.isOpen ? "bad" : "ok"}" data-act="rtoggle" data-id="${esc(id)}">${r.isOpen ? "Force close" : "Open now"}</button>` : ""}</div>
   <div class="kv">${kv("Cuisines", esc(r.cuisines))}${kv("Phone", esc(r.phone) + copyBtn(r.phone))}${kv("FSSAI", esc(r.fssai) + copyBtn(r.fssai))}${kv("Address", esc(r.addressLine))}${kv("Map location", mapLink(r.lat, r.lng))}${kv("Registered", dt(r.createdAt))}${kv("Rating", r.rating ? num(r.rating).toFixed(1) : "")}${kv("Reject reason", esc(r.rejectReason))}</div>
   <h3 style="margin-top:14px">Performance</h3><div class="grid" style="margin-top:8px">${stat("Orders", s.count)}${stat("Delivered", s.delivered)}${stat("Food sales", rs(s.food))}${stat("Commission", rs(s.commission))}${stat("Cancelled %", s.badPct + "%")}${stat("Avg accept time", mins(s.avgAccept) || "—")}</div>
   <h3 style="margin-top:14px">Settings</h3><div class="form"><label>Delivery radius (km)<input id="e-rad" inputmode="decimal" value="${num(r.deliveryRadiusKm)}"></label><label>Packaging (₹)<input id="e-pack" inputmode="decimal" value="${num(r.packagingChargePaise) / 100}"></label><label>Prep time (min)<input id="e-prep" inputmode="decimal" value="${num(r.prepTimeMin)}"></label></div>
@@ -453,7 +476,7 @@ function openRider(id) {
   const r = data.riders.find((x) => x.id === id); if (!r) return;
   const s = riderStats(id), dep = data.deposits.filter((d) => d.riderUid === id).reduce((a, d) => a + num(d.amountPaise), 0);
   const recent = data.orders.filter((o) => o.riderUid === id).sort((a, b) => ms(b.createdAt) - ms(a.createdAt)).slice(0, 8).map((o) => `<div class="click" data-open="order:${esc(o.id)}" style="cursor:pointer"><span>#${esc(short(o.id))} · ${esc(o.restaurantName)}</span><span>${pill(o.status)}</span></div>`).join("");
-  openModal(r.name, `<div class="row">${pill(r.status)}${r.status === "approved" && r.isOnline ? `<button class="btn sm bad" data-act="roffline" data-id="${esc(id)}">Force offline</button>` : ""}</div>
+  openModal(r.name, `${photoImg(r.photoData, "width:84px;height:84px;object-fit:cover;border-radius:50%;display:block;margin-bottom:12px")}<div class="row">${pill(r.status)}${r.status === "approved" && r.isOnline ? `<button class="btn sm bad" data-act="roffline" data-id="${esc(id)}">Force offline</button>` : ""}</div>
   <div class="kv">${kv("Phone", esc(r.phone) + copyBtn(r.phone))}${kv("Vehicle", esc((r.vehicleType || "") + " " + (r.vehicleNumber || "")))}${kv("City", esc(r.city))}${kv("Online now", r.isOnline ? "Yes" : "No")}${kv("Registered", dt(r.createdAt))}${kv("Reject reason", esc(r.rejectReason))}</div>
   <div class="grid" style="margin-top:12px">${stat("Trips", s.trips)}${stat("Active now", s.active)}${stat("Earned", rs(s.earned))}${stat("Cash collected", rs(s.cash))}${stat("Cash deposited", rs(dep))}${stat("To deposit", rs(s.cash - dep), s.cash - dep > 0 ? "alert" : "good")}</div>
   <h3 style="margin-top:14px">Recent deliveries</h3><div class="kv">${recent || "None yet."}</div>
@@ -477,7 +500,12 @@ function openDeposit(riderId) {
   const r = data.riders.find((x) => x.id === riderId);
   openModal("Cash deposit · " + (r?.name || ""), `<div class="form"><label>Amount received (₹)<input id="dep-a" inputmode="decimal"></label><label>Note (optional)<input id="dep-n"></label></div><div class="acts"><button class="btn ok" data-act="deposit" data-id="${esc(riderId)}">Save deposit</button></div>`);
 }
-function openBanner(id) { const x = id === "new" ? { active: true, sortOrder: data.banners.length + 1 } : data.banners.find((b) => b.id === id); openModal(id === "new" ? "New banner" : "Edit banner", form(BANNER_F, x) + `<div class="acts"><button class="btn" data-act="bsave" data-id="${esc(id)}">Save</button>${id !== "new" ? `<button class="btn bad" data-act="bdel" data-id="${esc(id)}" data-confirm="1">Delete</button>` : ""}</div>`); }
+function openBanner(id) {
+  const x = id === "new" ? { active: true, sortOrder: data.banners.length + 1 } : data.banners.find((b) => b.id === id);
+  bannerImg = x.imageData || "";
+  openModal(id === "new" ? "New banner" : "Edit banner", form(BANNER_F, x) + `<h3 style="margin:16px 0 8px">Banner photo</h3><div class="sub">Choose a photo from your gallery. It is shrunk automatically. Wide photos look best.</div><div id="bn-prev">${bannerPreview()}</div><input id="bn-file" type="file" accept="image/*" hidden><div class="acts"><button class="btn ghost" data-act="bpick" type="button">Choose photo</button><button class="btn ghost" data-act="bimgclear" type="button">Remove photo</button></div><div class="acts"><button class="btn" data-act="bsave" data-id="${esc(id)}">Save banner</button>${id !== "new" ? `<button class="btn bad" data-act="bdel" data-id="${esc(id)}" data-confirm="1">Delete</button>` : ""}</div>`);
+}
+function couponUses(code) { return data.orders.filter((o) => o.couponCode === code && o.status !== "cancelled" && o.status !== "rejected").length; }
 function openCoupon(id) {
   const x = id === "new" ? { active: true, type: "percent" } : data.coupons.find((c) => c.id === id);
   const v = { ...x, minOrder: num(x.minOrderPaise) / 100, maxDiscount: num(x.maxDiscountPaise) / 100, expires: ts(x.expiresAt) ? ts(x.expiresAt).toISOString().slice(0, 10) : "" };
@@ -503,14 +531,16 @@ const ACTIONS = {
   showotp: async (b) => { try { const s = await getDoc(doc(db, "orders", b.dataset.id, "secrets", "otp")); $("o-otp").innerHTML = `<b style="font-size:18px;letter-spacing:3px">${esc(s.data()?.code ?? "n/a")}</b>`; log("viewed otp", b.dataset.id); } catch (_) { toast("Could not read OTP"); } },
   depopen: async (b) => openDeposit(b.dataset.id),
   deposit: (b) => run("Deposit recorded", async () => { const a = Math.round(Number($("dep-a").value) * 100); if (!(a > 0)) throw { message: "Enter the amount" }; await addDoc(collection(db, "cashDeposits"), { riderUid: b.dataset.id, amountPaise: a, note: $("dep-n").value.trim(), createdAt: serverTimestamp() }); log("cash deposit", b.dataset.id, rs(a)); }),
-  bsave: (b) => run("Banner saved", async () => { const v = readForm(BANNER_F); if (!v.title) throw { message: "Enter a title" }; if (b.dataset.id === "new") await addDoc(collection(db, "banners"), { ...v, createdAt: serverTimestamp() }); else await upd("banners", b.dataset.id, v); log("banner saved", v.title); }),
+  bpick: async () => { $("bn-file").click(); },
+  bimgclear: async () => { bannerImg = ""; $("bn-prev").innerHTML = bannerPreview(); },
+  bsave: (b) => run("Banner saved", async () => { const v = { ...readForm(BANNER_F), imageData: bannerImg }; if (!v.title) throw { message: "Enter a title" }; if (b.dataset.id === "new") await addDoc(collection(db, "banners"), { ...v, createdAt: serverTimestamp() }); else await upd("banners", b.dataset.id, v); log("banner saved", v.title); }),
   bdel: (b) => run("Banner deleted", async () => { await deleteDoc(doc(db, "banners", b.dataset.id)); log("banner deleted", b.dataset.id); }),
   csave: (b) => run("Coupon saved", async () => { const f = readForm(COUPON_F); const code = f.code.toUpperCase().replace(/\s+/g, ""); if (!code) throw { message: "Enter a code" }; if (!(f.value > 0)) throw { message: "Enter the value" }; const v = { code, description: f.description, type: f.type, value: f.value, minOrderPaise: Math.round(f.minOrder * 100), maxDiscountPaise: Math.round(f.maxDiscount * 100), usageLimit: f.usageLimit, active: f.active, expiresAt: f.expires ? Timestamp.fromDate(new Date(f.expires + "T23:59:59")) : null }; if (b.dataset.id === "new") await addDoc(collection(db, "coupons"), { ...v, usedCount: 0, createdAt: serverTimestamp() }); else await upd("coupons", b.dataset.id, v); log("coupon saved", code); }),
   cdel: (b) => run("Coupon deleted", async () => { await deleteDoc(doc(db, "coupons", b.dataset.id)); log("coupon deleted", b.dataset.id); }),
   saveprice: () => run("Pricing saved", async () => { const out = {}; for (const i of document.querySelectorAll("[data-price]")) { const v = Number(i.value.trim()); if (i.value.trim() === "" || !isFinite(v) || v < 0) throw { message: "Check the value for " + i.dataset.price }; out[i.dataset.price] = v; } await setDoc(doc(db, "config", "pricing"), out, { merge: true }); log("pricing changed", "config/pricing", JSON.stringify(out)); }, true),
   csv: async (b) => {
     const k = b.dataset.id, rmap = byId(data.restaurants);
-    if (k === "orders") download("orders.csv", [["Order", "Placed", "Status", "Restaurant", "Customer", "Rider", "Food", "Packaging", "GST food", "Delivery", "Platform fee", "GST fees", "Round off", "Total", "Commission", "Rider pay"], ...ordersFiltered().map((o) => [o.id, dt(o.createdAt), o.status, o.restaurantName, o.customerName, o.riderName, ...["foodSubtotalPaise", "packagingPaise", "foodGstPaise", "deliveryPaise", "platformFeePaise", "gstOnFeesPaise", "roundOffPaise", "totalPaise", "commissionPaise", "riderPayPaise"].map((f) => num(o[f]) / 100)])]);
+    if (k === "orders") download("orders.csv", [["Order", "Placed", "Status", "Restaurant", "Customer", "Rider", "Food", "Packaging", "GST food", "Delivery", "Platform fee", "GST fees", "Round off", "Total", "Commission", "Rider pay", "Coupon discount", "Coupon"], ...ordersFiltered().map((o) => [o.id, dt(o.createdAt), o.status, o.restaurantName, o.customerName, o.riderName, ...["foodSubtotalPaise", "packagingPaise", "foodGstPaise", "deliveryPaise", "platformFeePaise", "gstOnFeesPaise", "roundOffPaise", "totalPaise", "commissionPaise", "riderPayPaise", "discountPaise"].map((f) => num(o[f]) / 100), o.couponCode || ""])]);
     else if (k === "restaurants") download("restaurants.csv", [["Name", "Status", "Phone", "Cuisines", "FSSAI", "Address", "Lat", "Lng", "Radius km"], ...data.restaurants.map((r) => [r.name, r.status, r.phone, r.cuisines, r.fssai, r.addressLine, r.lat, r.lng, r.deliveryRadiusKm])]);
     else if (k === "riders") download("riders.csv", [["Name", "Status", "Phone", "Vehicle", "Number", "City", "Trips", "Earned"], ...data.riders.map((r) => { const s = riderStats(r.id); return [r.name, r.status, r.phone, r.vehicleType, r.vehicleNumber, r.city, s.trips, s.earned / 100]; })]);
     else if (k === "customers") download("customers.csv", [["Name", "Email", "Joined", "Orders", "Spent"], ...data.users.filter((u) => u.role === "customer").map((u) => { const s = custStats(u.id); return [u.name, u.email, dt(u.createdAt), s.count, s.spent / 100]; })]);
@@ -541,6 +571,13 @@ document.addEventListener("input", (e) => {
   if (e.target.id === "q") { S.q[tab] = e.target.value; store.set("tw_state", S); if (RESULTS[tab]) $("results").innerHTML = RESULTS[tab](); }
   if (/^sim-/.test(e.target.id || "")) $("sim-out").innerHTML = simHtml();
   if (e.target.id === "gs") globalSearch(e.target.value);
+});
+
+document.addEventListener("change", async (e) => {
+  if (e.target.id !== "bn-file" || !e.target.files[0]) return;
+  try { bannerImg = await shrinkImage(e.target.files[0], 1000, 200 * 1024); $("bn-prev").innerHTML = bannerPreview(); toast("Photo ready. Tap Save banner."); }
+  catch (err) { toast(err.message || "Could not read this photo"); }
+  e.target.value = "";
 });
 
 function globalSearch(v) {
