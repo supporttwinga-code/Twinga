@@ -6,6 +6,8 @@ on:
     paths:
       - 'apps/restaurant/**'
       - '.github/workflows/build-restaurant.yml'
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -57,8 +59,21 @@ jobs:
           open('lib/firebase_options.dart', 'w').write(src)
           print('firebase_options.dart written for project', opts['projectId'])
           PY
-      - run: flutter build apk --release
-      - uses: actions/upload-artifact@v4
+      - name: Build release APK (retries once on network errors)
+        run: flutter build apk --release || (sleep 30 && flutter build apk --release)
+      - name: Rename APK
+        run: cp build/app/outputs/flutter-apk/app-release.apk twinga-restaurant.apk
+      - name: Publish APK to GitHub Releases
+        uses: softprops/action-gh-release@v2
         with:
-          name: twinga-restaurant-apk
-          path: apps/restaurant/build/app/outputs/flutter-apk/app-release.apk
+          tag_name: restaurant-${{ github.run_number }}
+          name: Restaurant build ${{ github.run_number }}
+          prerelease: true
+          files: apps/restaurant/twinga-restaurant.apk
+      - name: Also keep a 1-day artifact (optional)
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: twinga-restaurant
+          path: apps/restaurant/twinga-restaurant.apk
+          retention-days: 1
