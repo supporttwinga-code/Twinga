@@ -6,6 +6,8 @@ on:
     paths:
       - 'apps/rider/**'
       - '.github/workflows/build-rider.yml'
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -58,8 +60,21 @@ jobs:
           open('lib/firebase_options.dart', 'w').write(src)
           print('firebase_options.dart written for project', opts['projectId'])
           PY
-      - run: flutter build apk --release
-      - uses: actions/upload-artifact@v4
+      - name: Build release APK (retries once on network errors)
+        run: flutter build apk --release || (sleep 30 && flutter build apk --release)
+      - name: Rename APK
+        run: cp build/app/outputs/flutter-apk/app-release.apk twinga-rider.apk
+      - name: Publish APK to GitHub Releases
+        uses: softprops/action-gh-release@v2
         with:
-          name: twinga-rider-apk
-          path: apps/rider/build/app/outputs/flutter-apk/app-release.apk
+          tag_name: rider-${{ github.run_number }}
+          name: Rider build ${{ github.run_number }}
+          prerelease: true
+          files: apps/rider/twinga-rider.apk
+      - name: Also keep a 1-day artifact (optional)
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: twinga-rider
+          path: apps/rider/twinga-rider.apk
+          retention-days: 1
