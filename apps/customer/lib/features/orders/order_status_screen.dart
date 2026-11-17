@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../../core/money.dart';
 import '../../core/theme.dart';
 
+import 'rate_order_card.dart';
+
 String orderStatusText(String status) {
   switch (status) {
     case 'placed':
@@ -175,6 +177,10 @@ class OrderStatusScreen extends StatelessWidget {
                 _FailedCard(order: d, status: status)
               else
                 _TimelineCard(order: d, status: status),
+              if (status == 'delivered') ...[
+                const SizedBox(height: 14),
+                RateOrderCard(orderId: orderId, order: d),
+              ],
               if (live && riderName.isNotEmpty) ...[
                 const SizedBox(height: 14),
                 _RiderCard(name: riderName, phone: riderPhone),
@@ -925,6 +931,8 @@ class _BillCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final int round = _asInt(order['roundOffPaise']);
     final int pack = _asInt(order['packagingPaise']);
+    final int discount = _asInt(order['discountPaise']);
+    final String coupon = (order['couponCode'] ?? '').toString();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: _card(),
@@ -947,6 +955,12 @@ class _BillCard extends StatelessWidget {
           _row('GST on food', _asInt(order['foodGstPaise'])),
           _row('GST on fees', _asInt(order['gstOnFeesPaise'])),
           if (round != 0) _row('Round off', round, signed: true),
+          if (discount > 0)
+            _row(
+              coupon.isEmpty ? 'Coupon discount' : 'Coupon ($coupon)',
+              -discount,
+              signed: true,
+            ),
           const Divider(height: 20),
           _row(
             'Total (cash on delivery)',
