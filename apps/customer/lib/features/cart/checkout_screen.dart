@@ -11,6 +11,7 @@ import '../address/address_screen.dart';
 import '../orders/order_success_screen.dart';
 import '../restaurants/restaurant_models.dart';
 import 'cart.dart';
+import 'coupon.dart';
 import 'pricing.dart';
 
 String _signed(int paise) {
@@ -30,6 +31,7 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _placing = false;
   String? _error;
+  Coupon? _coupon;
 
   Future<void> _placeOrder({
     required User user,
@@ -37,6 +39,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     required Restaurant shown,
     required PricingConfig cfg,
     required SavedAddress addr,
+    required Coupon? coupon,
   }) async {
     setState(() {
       _placing = true;
@@ -86,6 +89,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         packagingPaise: fresh.packagingChargePaise,
         meters: meters,
       );
+      int discount = 0;
+      String couponCode = '';
+      final Coupon? chosen = coupon;
+      if (chosen != null) {
+        final Coupon? live = await findCoupon(chosen.code);
+        if (live == null) {
+          throw 'This coupon is no longer available.';
+        }
+        final String? problem = live.problemFor(bill.foodPaise);
+        if (problem != null) {
+          throw problem;
+        }
+        if (await usedByCustomer(user.uid, live.code)) {
+          throw 'You have already used this coupon.';
+        }
+        discount = live.discountFor(bill.foodPaise);
+        couponCode = live.code;
+      }
       final String otp = (1000 + math.Random.secure().nextInt(9000)).toString();
       orderRef = db.collection('orders').doc();
       await orderRef.set(<String, dynamic>{
@@ -111,7 +132,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'platformFeePaise': bill.platformFeePaise,
         'gstOnFeesPaise': bill.gstOnFeesPaise,
         'roundOffPaise': bill.roundOffPaise,
-        'totalPaise': bill.totalPaise,
+        'totalPaise': bill.totalPaise - discount,
+        if (discount > 0) 'couponCode': couponCode,
+        if (discount > 0) 'discountPaise': discount,
         'commissionPaise': bill.commissionPaise,
         'riderPayPaise': bill.riderPayPaise,
         'distanceMeters': bill.distanceMeters,
@@ -173,6 +196,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     required PricingConfig cfg,
     required SavedAddress addr,
     required Bill bill,
+    required int discount,
+    required Coupon? coupon,
   }) async {
     final bool? ok = await showModalBottomSheet<bool>(
       context: context,
@@ -233,7 +258,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                   ),
                   Text(
-                    rupees(bill.totalPaise),
+                    rupees(bill.totalPaise - discount),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -270,6 +295,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       shown: shown,
       cfg: cfg,
       addr: addr,
+      coupon: coupon,
     );
   }
 
@@ -410,6 +436,96 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  Future<void> _pickCoupon(User user, int foodPaise) async {
+    final Coupon? c = await showModalBottomSheet<Coupon>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => _CouponSheet(uid: user.uid, foodPaise: foodPaise),
+    );
+    if (c != null && mounted) {
+      setState(() {
+        _coupon = c;
+      });
+    }
+  }
+
+  Widget _couponCard(User user, Bill b, Coupon? cp, int discount) {
+    if (cp != null && discount > 0) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8F8EE),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFBFE8CD)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.local_offer_rounded, color: TwingaColors.veg),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${cp.code} applied',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: TwingaColors.ink,
+                    ),
+                  ),
+                  Text(
+                    'You save ${rupees(discount)} on this order',
+                    style: const TextStyle(
+                      color: TwingaColors.veg,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _coupon = null;
+                });
+              },
+              child: const Text('Remove'),
+            ),
+          ],
+        ),
+      );
+    }
+    return Material(
+      color: Colors.white,
+      elevation: 1,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => _pickCoupon(user, b.foodPaise),
+        child: const Padding(
+          padding: EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Icon(Icons.local_offer_outlined, color: TwingaColors.orange),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Apply coupon',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: TwingaColors.ink,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: TwingaColors.blue),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _billRow(String label, String value, {bool bold = false}) {
     final TextStyle style = TextStyle(
       fontWeight: bold ? FontWeight.w800 : FontWeight.w500,
@@ -453,6 +569,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     }
     final Bill? b = bill;
+    final Coupon? cp = _coupon;
+    String? couponProblem;
+    int discount = 0;
+    if (b != null && cp != null) {
+      couponProblem = cp.problemFor(b.foodPaise);
+      if (couponProblem == null) {
+        discount = cp.discountFor(b.foodPaise);
+      }
+    }
+    final int toPay = b == null ? 0 : b.totalPaise - discount;
     final bool canPlace = !_placing && addr != null && b != null;
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -557,6 +683,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         if (b != null) ...[
           const SizedBox(height: 12),
+          _couponCard(user, b, cp, discount),
+          if (couponProblem != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                couponProblem,
+                style: const TextStyle(
+                  color: TwingaColors.error,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          const SizedBox(height: 12),
           Card(
             color: Colors.white,
             elevation: 1,
@@ -577,8 +716,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   _billRow('GST on fees', rupees(b.gstOnFeesPaise)),
                   if (b.roundOffPaise != 0)
                     _billRow('Round off', _signed(b.roundOffPaise)),
+                  if (discount > 0)
+                    _billRow('Coupon discount', '-${rupees(discount)}'),
                   const Divider(),
-                  _billRow('To pay', rupees(b.totalPaise), bold: true),
+                  _billRow('To pay', rupees(toPay), bold: true),
                 ],
               ),
             ),
@@ -604,6 +745,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     cfg: cfg,
                     addr: addr!,
                     bill: b!,
+                    discount: discount,
+                    coupon: discount > 0 ? cp : null,
                   )
               : null,
           child: _placing
@@ -618,11 +761,291 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               : Text(
                   b == null
                       ? 'Place order'
-                      : 'Place order  ·  ${rupees(b.totalPaise)}',
+                      : 'Place order  ·  ${rupees(toPay)}',
                 ),
         ),
         const SizedBox(height: 24),
       ],
+    );
+  }
+}
+
+class _CouponSheet extends StatefulWidget {
+  const _CouponSheet({required this.uid, required this.foodPaise});
+
+  final String uid;
+  final int foodPaise;
+
+  @override
+  State<_CouponSheet> createState() => _CouponSheetState();
+}
+
+class _CouponSheetState extends State<_CouponSheet> {
+  final TextEditingController _ctl = TextEditingController();
+  bool _busy = false;
+  String? _msg;
+
+  @override
+  void dispose() {
+    _ctl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _use(Coupon c) async {
+    final String? p = c.problemFor(widget.foodPaise);
+    if (p != null) {
+      setState(() {
+        _msg = p;
+      });
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _msg = null;
+    });
+    try {
+      final bool used = await usedByCustomer(widget.uid, c.code);
+      if (!mounted) {
+        return;
+      }
+      if (used) {
+        setState(() {
+          _busy = false;
+          _msg = 'You have already used this coupon.';
+        });
+        return;
+      }
+      Navigator.of(context).pop(c);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _busy = false;
+        _msg = 'Could not check this coupon. Please try again.';
+      });
+    }
+  }
+
+  Future<void> _typed() async {
+    setState(() {
+      _busy = true;
+      _msg = null;
+    });
+    try {
+      final Coupon? c = await findCoupon(_ctl.text);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _busy = false;
+      });
+      if (c == null) {
+        setState(() {
+          _msg = 'This coupon code is not valid.';
+        });
+        return;
+      }
+      await _use(c);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _busy = false;
+        _msg = 'Could not check this coupon. Please try again.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+            children: [
+              const Text(
+                'Apply coupon',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: TwingaColors.ink,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _ctl,
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: const InputDecoration(
+                        hintText: 'Enter coupon code',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  FilledButton(
+                    onPressed: _busy ? null : _typed,
+                    child: _busy
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Apply'),
+                  ),
+                ],
+              ),
+              if (_msg != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    _msg!,
+                    style: const TextStyle(
+                      color: TwingaColors.error,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 18),
+              const Text(
+                'Available coupons',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: TwingaColors.ink,
+                ),
+              ),
+              const SizedBox(height: 8),
+              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream:
+                    FirebaseFirestore.instance.collection('coupons').snapshots(),
+                builder: (context, snap) {
+                  if (snap.hasError) {
+                    return const Text('Could not load coupons.');
+                  }
+                  if (!snap.hasData) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  final List<Coupon> list = <Coupon>[
+                    for (final QueryDocumentSnapshot<Map<String, dynamic>> d
+                        in snap.data!.docs)
+                      Coupon.fromDoc(d),
+                  ].where((c) => c.active && !c.expired && c.code.isNotEmpty).toList();
+                  if (list.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        'No coupons available right now.',
+                        style: TextStyle(color: Colors.black54),
+                      ),
+                    );
+                  }
+                  return Column(
+                    children: [
+                      for (final Coupon c in list) _tile(c),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _tile(Coupon c) {
+    final String? problem = c.problemFor(widget.foodPaise);
+    final bool ok = problem == null;
+    return Opacity(
+      opacity: ok ? 1 : 0.55,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFD5E3FA)),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _busy ? null : () => _use(c),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF1DC),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    c.code,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: TwingaColors.orange,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        c.offerText,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: TwingaColors.ink,
+                        ),
+                      ),
+                      if (c.description.isNotEmpty)
+                        Text(
+                          c.description,
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      if (c.minOrderPaise > 0)
+                        Text(
+                          'Minimum order ${rupees(c.minOrderPaise)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black45,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Text(
+                  ok ? 'Apply' : 'Not eligible',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: ok ? TwingaColors.blue : Colors.black45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
