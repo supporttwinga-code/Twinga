@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Delete Your Account | Twinga</title>
+<meta name="robots" content="index,follow">
+<link rel="stylesheet" href="legal.css">
+</head><body>
+<div id="warn"></div>
+<header><div class="in"><div class="brand">TWINGA <b>&bull;</b> Good Food, Faster</div>
+<h1>Delete Your Account</h1><p>Last updated: 19 November 2026</p></div></header>
+<nav><a href="privacy.html" class="">Privacy Policy</a><a href="terms.html" class="">Terms &amp; Conditions</a><a href="delete-account.html" class="on">Delete account</a></nav>
+<main>
+
+<section><h2>Delete your Twinga account</h2>
+<p>This page is for users of the <b>Twinga</b> (customer), <b>Twinga Partner</b> (restaurant) and <b>Twinga Rider</b> (delivery partner) apps. You can ask us to delete your account and your personal information at any time.</p></section>
+
+<section><h2>How to ask</h2>
+<ol><li>Send an email to <b><span data-t="email"></span></b> from the email address you used to sign up. If you signed up with a mobile number, write that number in the email.</li><li>Write "Delete my account" in the subject and tell us which app you used (Twinga, Twinga Partner or Twinga Rider).</li><li>We may reply to confirm that it is really you. This protects you from someone else deleting your account.</li><li>We delete your account within 30 days and send you a confirmation.</li></ol></section>
+
+<section><h2>What is deleted</h2>
+<ul><li>Your login, name, email or mobile number, and your profile.</li><li>Your saved addresses, and your notification token.</li><li>For restaurants and delivery partners: your registration details, uploaded photos, vehicle details and payment details.</li></ul></section>
+
+<section><h2>What we must keep</h2>
+<p>We keep order, payment, earnings, cash deposit and withdrawal records for as long as the law and accounting rules require. These records are kept only for that purpose and are deleted or made anonymous after that period. If you have a pending withdrawal or cash to deposit, we will settle it before deleting your account.</p></section>
+
+<section><h2>Contact</h2>
+<p><b><span data-t="business"></span></b><br>Email: <span data-t="email"></span><br>Phone: <span data-t="phone"></span><br>Address: <span data-t="address"></span></p></section>
+</main>
+<footer>These pages cover the Twinga (customer), Twinga Partner (restaurant) and Twinga Rider (delivery partner) apps.</footer>
+<script src="twinga-info.js"></script>
+<script>
+(function(){
+  var t=window.TWINGA||{};
+  document.querySelectorAll("[data-t]").forEach(function(el){
+    var v=(t[el.getAttribute("data-t")]||"").trim();
+    el.textContent=v||"(not set)";
+  });
+  var need=["email","city","grievanceName"].filter(function(k){return !(t[k]||"").trim();});
+  if(need.length){var w=document.getElementById("warn");w.style.display="block";w.textContent="Setup incomplete: fill "+need.join(", ")+" in twinga-info.js";}
+})();
+</script>
+</body></html>
