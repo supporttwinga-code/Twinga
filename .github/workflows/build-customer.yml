@@ -11,6 +11,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: apps/customer
@@ -25,6 +26,12 @@ jobs:
           channel: stable
           flutter-version: '3.47.9'
       - run: flutter create --platforms=android --org com.twinga --project-name customer .
+      - name: Limit Gradle memory
+        run: |
+          echo "org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m -XX:+HeapDumpOnOutOfMemoryError" >> android/gradle.properties
+          echo "org.gradle.daemon=false" >> android/gradle.properties
+          echo "kotlin.daemon.jvm.options=-Xmx1g" >> android/gradle.properties
+          echo "org.gradle.workers.max=2" >> android/gradle.properties
       - run: sed -i 's/android:label="[^"]*"/android:label="Twinga"/' android/app/src/main/AndroidManifest.xml
       - run: sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <application#' android/app/src/main/AndroidManifest.xml
       - run: sed -i 's#<application#<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>\n    <application#' android/app/src/main/AndroidManifest.xml
@@ -60,8 +67,9 @@ jobs:
           open('lib/firebase_options.dart', 'w').write(src)
           print('firebase_options.dart written for project', opts['projectId'])
           PY
-      - name: Build release APK (retries once on network errors)
-        run: flutter build apk --release || (sleep 30 && flutter build apk --release)
+      - name: Build release APK (arm64, retries once)
+        run: |
+          flutter build apk --release --target-platform android-arm64 || (sleep 30 && flutter build apk --release --target-platform android-arm64)
       - name: Rename APK
         run: cp build/app/outputs/flutter-apk/app-release.apk twinga-customer.apk
       - name: Publish APK to GitHub Releases
