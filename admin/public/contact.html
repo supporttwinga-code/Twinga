@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contact us | Twinga</title>
+<meta name="robots" content="index,follow">
+<link rel="stylesheet" href="legal.css">
+</head><body>
+<div id="warn"></div>
+<header><div class="in"><div class="brand">TWINGA <b>&bull;</b> Good Food, Faster</div>
+<h1>Contact us</h1><p>We are happy to help</p></div></header>
+<nav><a href="home.html">Home</a><a href="refund-policy.html">Cancellation &amp; Refund</a><a href="delivery-policy.html">Delivery</a><a href="contact.html" class="on">Contact us</a><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms &amp; Conditions</a></nav>
+<main>
+<section><h2>Contact us</h2>
+<p>Questions about an order, a payment or your account? Write to us. We reply on email.</p>
+<p><b><span data-t="business"></span></b><br>Email: <span data-t="email"></span><br>Phone: <span data-t="phone"></span><br>City: <span data-t="city"></span><br>Address: <span data-t="address"></span></p>
+<p>Please include your <b>registered mobile number</b> and the <b>order number</b> so we can help faster.</p></section>
+
+<section><h2>Grievance officer</h2>
+<p>For complaints you can write to <b><span data-t="grievanceName"></span></b> at <span data-t="email"></span>. We try to reply within 3 working days.</p></section>
+
+<section><h2>Account and data requests</h2>
+<p>To delete your account, see <a href="delete-account.html">Delete account</a>. For how we use your data, see our <a href="privacy.html">Privacy Policy</a>.</p></section>
+</main>
+<footer>&copy; 2026 <span data-t="business"></span>. Twinga customer, Twinga Partner (restaurant) and Twinga Rider (delivery partner) apps.</footer>
+<script src="twinga-info.js"></script>
+<script>
+(function(){
+  var t=window.TWINGA||{};
+  document.querySelectorAll("[data-t]").forEach(function(el){
+    var v=(t[el.getAttribute("data-t")]||"").trim();
+    el.textContent=v||"(not set)";
+  });
+  var need=["email","city","grievanceName"].filter(function(k){return !(t[k]||"").trim();});
+  if(need.length){var w=document.getElementById("warn");w.style.display="block";w.textContent="Setup incomplete: fill "+need.join(", ")+" in twinga-info.js";}
+})();
+</script>
+</body></html>
