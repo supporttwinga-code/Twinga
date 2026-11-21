@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cancellation and Refund Policy | Twinga</title>
+<meta name="robots" content="index,follow">
+<link rel="stylesheet" href="legal.css">
+</head><body>
+<div id="warn"></div>
+<header><div class="in"><div class="brand">TWINGA <b>&bull;</b> Good Food, Faster</div>
+<h1>Cancellation and Refund Policy</h1><p>Last updated: 21 November 2026</p></div></header>
+<nav><a href="home.html">Home</a><a href="refund-policy.html" class="on">Cancellation &amp; Refund</a><a href="delivery-policy.html">Delivery</a><a href="contact.html">Contact us</a><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms &amp; Conditions</a></nav>
+<main>
+<section><h2>1. Cancelling an order</h2>
+<ul><li>You can cancel an order in the app <b>before the restaurant accepts it</b>. You are not charged.</li><li>Once the restaurant has accepted or started preparing your food, the order usually cannot be cancelled, because the food is already being made.</li><li>If the restaurant rejects your order, or Twinga has to cancel it (for example no delivery partner is available), you do not pay for it.</li></ul></section>
+
+<section><h2>2. When you can get a refund</h2>
+<ul><li>The restaurant rejects or cancels your order after you paid online.</li><li>Your order is not delivered.</li><li>Items are missing or the order is wrong. Please tell us the <b>same day</b> with the order number, and a photo if possible.</li><li>You were charged more than once for the same order.</li></ul>
+<p>We look into every complaint and decide a fair solution. This may be a full or partial refund.</p></section>
+
+<section><h2>3. How refunds are paid</h2>
+<ul><li><b>Online payments</b> (UPI, cards, netbanking) are refunded to the <b>same payment method</b> you used. After we approve a refund it usually reaches you in <b>5 to 7 working days</b>, depending on your bank.</li><li><b>Cash on delivery</b> orders: you do not pay if the order is not delivered. If a refund is approved after you paid cash, we return the amount to your UPI or bank account.</li></ul></section>
+
+<section><h2>4. When a refund may not be given</h2>
+<ul><li>You gave a wrong address or were not reachable at the delivery address.</li><li>You changed your mind after the food was accepted or prepared.</li><li>The complaint is about taste or personal preference and the food was as described.</li></ul></section>
+
+<section><h2>5. How to ask for a refund</h2>
+<p>Open the app, go to <b>Profile, Help with an order</b> and write to us, or email us with your order number.</p>
+<p><b><span data-t="business"></span></b><br>Email: <span data-t="email"></span><br>Phone: <span data-t="phone"></span><br>City: <span data-t="city"></span><br>Address: <span data-t="address"></span></p></section>
+</main>
+<footer>&copy; 2026 <span data-t="business"></span>. Twinga customer, Twinga Partner (restaurant) and Twinga Rider (delivery partner) apps.</footer>
+<script src="twinga-info.js"></script>
+<script>
+(function(){
+  var t=window.TWINGA||{};
+  document.querySelectorAll("[data-t]").forEach(function(el){
+    var v=(t[el.getAttribute("data-t")]||"").trim();
+    el.textContent=v||"(not set)";
+  });
+  var need=["email","city","grievanceName"].filter(function(k){return !(t[k]||"").trim();});
+  if(need.length){var w=document.getElementById("warn");w.style.display="block";w.textContent="Setup incomplete: fill "+need.join(", ")+" in twinga-info.js";}
+})();
+</script>
+</body></html>
