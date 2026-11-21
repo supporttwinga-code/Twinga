@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Delivery Policy | Twinga</title>
+<meta name="robots" content="index,follow">
+<link rel="stylesheet" href="legal.css">
+</head><body>
+<div id="warn"></div>
+<header><div class="in"><div class="brand">TWINGA <b>&bull;</b> Good Food, Faster</div>
+<h1>Delivery Policy</h1><p>Last updated: 21 November 2026</p></div></header>
+<nav><a href="home.html">Home</a><a href="refund-policy.html">Cancellation &amp; Refund</a><a href="delivery-policy.html" class="on">Delivery</a><a href="contact.html">Contact us</a><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms &amp; Conditions</a></nav>
+<main>
+<section><h2>1. What we deliver</h2>
+<p>Twinga delivers ready-to-eat food from restaurants that are listed in the Twinga app. We do not ship products by courier or post.</p></section>
+
+<section><h2>2. Where we deliver</h2>
+<p>Each restaurant sets its own delivery area. You can order only from restaurants that deliver to your saved address. If a restaurant does not deliver to you, it is not shown in the app.</p></section>
+
+<section><h2>3. Delivery time</h2>
+<p>Delivery time depends on how long the restaurant takes to prepare the food, the distance, traffic and weather. The app shows the order status and live tracking after a delivery partner picks up your order. Times shown are estimates, not a guarantee.</p></section>
+
+<section><h2>4. Delivery charges</h2>
+<p>The delivery charge, packaging charge, platform fee and taxes are shown on the bill <b>before</b> you place the order. You pay the amount on that bill.</p></section>
+
+<section><h2>5. Receiving your order</h2>
+<ul><li>Please be available at your address and keep your phone on.</li><li>You get a <b>delivery OTP</b> in the app. Give it to the delivery partner only when the food is in your hands.</li><li>If we cannot reach you or you are not at the address, the order may be closed without a refund.</li></ul></section>
+
+<section><h2>6. Problems with delivery</h2>
+<p>If your order is late, wrong or not delivered, contact us the same day. See our <a href="refund-policy.html">Cancellation and Refund Policy</a>.</p>
+<p><b><span data-t="business"></span></b><br>Email: <span data-t="email"></span><br>Phone: <span data-t="phone"></span><br>City: <span data-t="city"></span><br>Address: <span data-t="address"></span></p></section>
+</main>
+<footer>&copy; 2026 <span data-t="business"></span>. Twinga customer, Twinga Partner (restaurant) and Twinga Rider (delivery partner) apps.</footer>
+<script src="twinga-info.js"></script>
+<script>
+(function(){
+  var t=window.TWINGA||{};
+  document.querySelectorAll("[data-t]").forEach(function(el){
+    var v=(t[el.getAttribute("data-t")]||"").trim();
+    el.textContent=v||"(not set)";
+  });
+  var need=["email","city","grievanceName"].filter(function(k){return !(t[k]||"").trim();});
+  if(need.length){var w=document.getElementById("warn");w.style.display="block";w.textContent="Setup incomplete: fill "+need.join(", ")+" in twinga-info.js";}
+})();
+</script>
+</body></html>
