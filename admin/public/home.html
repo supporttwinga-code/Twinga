@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Twinga | Twinga</title>
+<meta name="robots" content="index,follow">
+<link rel="stylesheet" href="legal.css">
+</head><body>
+<div id="warn"></div>
+<header><div class="in"><div class="brand">TWINGA <b>&bull;</b> Good Food, Faster</div>
+<h1>Food from restaurants near you, delivered to your door</h1><p class="big">Order. Track. Enjoy. That is Twinga.</p></div></header>
+<nav><a href="home.html" class="on">Home</a><a href="refund-policy.html">Cancellation &amp; Refund</a><a href="delivery-policy.html">Delivery</a><a href="contact.html">Contact us</a><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms &amp; Conditions</a></nav>
+<main>
+<section><h2>What is Twinga?</h2>
+<p>Twinga is a food delivery service. You choose a restaurant near you, place your order in the app, and a delivery partner brings it to your door. Restaurants prepare the food. Twinga connects customers, restaurants and delivery partners.</p></section>
+
+<section><h2>How it works</h2>
+<div class="grid3">
+<div class="step"><b>1. Choose</b>Open the Twinga app, set your delivery address and pick from restaurants that deliver to you.</div>
+<div class="step"><b>2. Order and pay</b>See the full bill before you order: food, packaging, delivery, platform fee and taxes. Pay cash on delivery, or online where available.</div>
+<div class="step"><b>3. Track and receive</b>Follow your order live. Share the delivery OTP with the delivery partner when the food is in your hands.</div>
+</div></section>
+
+<section><h2>For restaurants</h2>
+<p>Own a restaurant? Use the <b>Twinga Partner</b> app to register your restaurant, add your menu with photos, set your delivery area and receive orders. Payouts are sent to your bank account or UPI.</p></section>
+
+<section><h2>For delivery partners</h2>
+<p>Want to earn by delivering? Use the <b>Twinga Rider</b> app to sign up, go online, accept nearby deliveries with in-app navigation, and withdraw your earnings.</p></section>
+
+<section><h2>Our policies</h2>
+<ul><li><a href="refund-policy.html">Cancellation and Refund Policy</a></li><li><a href="delivery-policy.html">Delivery Policy</a></li><li><a href="privacy.html">Privacy Policy</a></li><li><a href="terms.html">Terms and Conditions</a></li><li><a href="delete-account.html">Delete your account</a></li><li><a href="contact.html">Contact us</a></li></ul></section>
+
+<section><h2>Contact</h2>
+<p><b><span data-t="business"></span></b><br>Email: <span data-t="email"></span><br>Phone: <span data-t="phone"></span><br>City: <span data-t="city"></span><br>Address: <span data-t="address"></span></p></section>
+</main>
+<footer>&copy; 2026 <span data-t="business"></span>. Twinga customer, Twinga Partner (restaurant) and Twinga Rider (delivery partner) apps.</footer>
+<script src="twinga-info.js"></script>
+<script>
+(function(){
+  var t=window.TWINGA||{};
+  document.querySelectorAll("[data-t]").forEach(function(el){
+    var v=(t[el.getAttribute("data-t")]||"").trim();
+    el.textContent=v||"(not set)";
+  });
+  var need=["email","city","grievanceName"].filter(function(k){return !(t[k]||"").trim();});
+  if(need.length){var w=document.getElementById("warn");w.style.display="block";w.textContent="Setup incomplete: fill "+need.join(", ")+" in twinga-info.js";}
+})();
+</script>
+</body></html>
